@@ -1,14 +1,12 @@
 package fr.red_spash.bedwars.Timer;
 
-import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.Models.ItemGenerator;
-import org.bukkit.Bukkit;
+import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
 
 public class MainTimer implements Runnable{
     @Override
     public void run() {
-        Bukkit.broadcastMessage("d");
-        for(ItemGenerator itemGenerator : Main.ItemGenerators){
+        for(ItemGenerator itemGenerator : BedWarsGame.ItemGenerators){
             itemGenerator.updateArmorStands();
             itemGenerator.removeTimeNextItem(0.05);
 

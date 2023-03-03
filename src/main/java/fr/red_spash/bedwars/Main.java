@@ -29,7 +29,7 @@ public class Main extends JavaPlugin {
         instance = this;
 
         getCommand("test").setExecutor(new testcommande());
-        Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this, new MainTimer(), 0,20);
+        //Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(this, new MainTimer(), 0,20);
         Bukkit.getPluginManager().registerEvents(new EventListener(),this);
         Bukkit.getPluginManager().registerEvents(new InventoryListener(),this);
         Bukkit.getPluginManager().registerEvents(new SpawnListener(),this);

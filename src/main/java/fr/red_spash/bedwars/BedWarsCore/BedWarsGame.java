@@ -217,6 +217,11 @@ public class BedWarsGame implements Listener {
                             }
                         }
 
+                        for(ItemGenerator itemGenerator : BedWarsGame.ItemGenerators){
+                            itemGenerator.startSpawn();
+
+                        }
+
                         int RADIUS = 15;
                         int i =0;
                         for(int x = RADIUS; x>= -RADIUS; x--) {

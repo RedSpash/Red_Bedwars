@@ -4,6 +4,7 @@ import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
 import fr.red_spash.bedwars.utils.GameState;
 import fr.red_spash.bedwars.utils.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
@@ -71,6 +72,17 @@ public class ItemGenerator {
                 this.spawnItem();
             }
         }
+    }
+
+    public void startSpawn(){
+        ItemGenerator itemGenerator = this;
+        Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                //itemGenerator.updateArmorStands();
+                itemGenerator.removeTimeNextItem(1);
+            }
+        },0,20);
     }
 
     private void spawnItem() {

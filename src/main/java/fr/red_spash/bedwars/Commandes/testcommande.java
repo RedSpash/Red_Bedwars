@@ -5,6 +5,8 @@ import fr.red_spash.bedwars.Items.Items;
 import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.Models.Base;
 import fr.red_spash.bedwars.Models.ItemGenerator;
+import fr.red_spash.bedwars.Shop.ItemCategorie;
+import fr.red_spash.bedwars.Shop.ShopEvent;
 import fr.red_spash.bedwars.utils.Utils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -44,6 +46,8 @@ public class testcommande implements CommandExecutor {
                         temp.setDefaultInventory(p);
                         p.setGameMode(GameMode.SURVIVAL);
                     }
+                }else if(strings[0].equalsIgnoreCase("shop")){
+                    ShopEvent.openShopInventory(p, ItemCategorie.BLOC);
                 }else{
                     p.teleport(Bukkit.getWorld(strings[0]).getSpawnLocation());
                 }

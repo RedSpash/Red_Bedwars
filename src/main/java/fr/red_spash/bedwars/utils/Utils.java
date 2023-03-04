@@ -1,13 +1,16 @@
 package fr.red_spash.bedwars.utils;
 
-import net.minecraft.server.v1_8_R3.EntityLiving;
+import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.io.File;
@@ -15,6 +18,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Utils {
 
@@ -66,7 +71,7 @@ public class Utils {
 
     public static String getChatColorOf(DyeColor color) {
         if (DyeColor.RED.equals(color)) {
-            return "§4";
+            return "§c";
         }else if (DyeColor.CYAN.equals(color)) {
             return "§b";
         }else if (DyeColor.BLUE.equals(color)) {
@@ -188,5 +193,33 @@ public class Utils {
         else {
             System.out.println("Directory not deleted");
         }
+    }
+
+    public static void sendActionText(Player player, String message){
+        PacketPlayOutChat packet = new PacketPlayOutChat(new ChatComponentText(message), (byte)2);
+        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+    }
+
+    public static void sendTitle(Player p,String title, String subtitle,int debut, int temps, int fin){
+        IChatBaseComponent chatTitle = IChatBaseComponent.ChatSerializer.a("{\"text\":\"" + title + "\"}");
+        IChatBaseComponent chatsubtitle = IChatBaseComponent.ChatSerializer.a("{\"text\":\"" + subtitle + "\"}");
+
+        PacketPlayOutTitle titlePacket = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, chatTitle);
+        PacketPlayOutTitle subtitlePacket = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, chatsubtitle);
+        PacketPlayOutTitle length = new PacketPlayOutTitle(debut, temps, fin);
+
+        ((CraftPlayer) p).getHandle().playerConnection.sendPacket(subtitlePacket);
+        ((CraftPlayer) p).getHandle().playerConnection.sendPacket(length);
+        ((CraftPlayer) p).getHandle().playerConnection.sendPacket(titlePacket);
+    }
+
+    public static ItemStack removeDataCategorieGlassPane(Material stainedGlassPane, DyeColor dyeColor) {
+        ItemStack itemStack = new ItemStack(stainedGlassPane,1,dyeColor.getData());
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        itemMeta.setDisplayName("§e§l⇧ Catégories");
+        itemMeta.setLore(new ArrayList<>(Arrays.asList("§6§l⇩ Objets")));
+        itemStack.setItemMeta(itemMeta);
+        return itemStack;
+
     }
 }

@@ -20,13 +20,16 @@ public class Base {
     private ArrayList<UUID> playersUUID = new ArrayList<>();
     private Location bedLocation;
     private Location spawnLocation;
-    private ArrayList<ItemGenerator> itemGenerator;
+    private Forge forge;
     private Location itemGeneratorLocation;
 
-    public Base(Location itemGeneratorLocation, DyeColor teamColor, ArrayList<ItemGenerator> itemGenerator){
-        this.itemGenerator = itemGenerator;
+    private int respawnTime = 5;
+
+    public Base(Location itemGeneratorLocation, DyeColor teamColor){
         this.itemGeneratorLocation = itemGeneratorLocation;
         this.teamColor = teamColor;
+        //speed true: 0.666666
+        this.forge = new Forge(itemGeneratorLocation,1.0, BedWarsGame.MAX_ITEM_FORGE);
         BedWarsGame.bases.add(this);
     }
 
@@ -72,7 +75,7 @@ public class Base {
             }
             BedWarsGame.playerBase.remove(uuid);
         }
-        this.sendMessage("§a"+p.getName()+" vient de rejoindre l'équipe !");
+        this.sendMessage("§7"+p.getName()+" vient de rejoindre l'équipe "+Utils.getChatColorOf(this.teamColor)+Utils.getColorName(this.teamColor).toLowerCase()+"§7!");
         BedWarsGame.playerBase.put(uuid,this);
     }
 
@@ -91,9 +94,6 @@ public class Base {
 
     public void addPlayer(Player p){
         this.addPlayer(p.getUniqueId());
-    }
-    public void addItemGenerator(ItemGenerator itemGenerator) {
-        this.itemGenerator.add(itemGenerator);
     }
 
     public Location getSpawnLocation() {
@@ -121,5 +121,9 @@ public class Base {
 
     public boolean isFull() {
         return this.playersUUID.size() >= BedWarsGame.TEAM_SIZE;
+    }
+
+    public int getRespawnTime() {
+        return respawnTime;
     }
 }

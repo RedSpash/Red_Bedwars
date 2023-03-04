@@ -2,6 +2,7 @@ package fr.red_spash.bedwars.listeners;
 
 import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
+import fr.red_spash.bedwars.Scoreboard.ScoreboardManager;
 import fr.red_spash.bedwars.utils.GameState;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -38,6 +39,7 @@ public class SpawnListener implements Listener {
         if(Bukkit.getWorld("bedwars") != null && BedWarsGame.gameStat == GameState.Waiting){
             e.getPlayer().teleport(BedWarsGame.spawn);
             BedWarsGame.checkCanStart();
+            ScoreboardManager.setScoreboard(e.getPlayer());
         }
     }
 

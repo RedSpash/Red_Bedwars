@@ -1,19 +1,26 @@
 package fr.red_spash.bedwars.listeners;
 
 import fr.red_spash.bedwars.Items.Items;
+import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.Models.Base;
 import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
+import fr.red_spash.bedwars.Models.Generator;
 import fr.red_spash.bedwars.utils.Utils;
+import org.apache.logging.log4j.core.util.UuidUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.ItemDespawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -41,7 +48,13 @@ public class InventoryListener implements Listener {
                         DyeColor dyeColor = wool.getColor();
                         for(Base base : BedWarsGame.bases){
                             if(base.getColor() == dyeColor){
-                                base.addPlayer(p.getUniqueId());
+                                if(base.getPlayersUUID().size() < BedWarsGame.TEAM_SIZE){
+                                    base.addPlayer(p.getUniqueId());
+                                    break;
+                                }else{
+                                    p.sendMessage("§cIl n'y a plus de place dans l'équipe !");
+                                    p.playSound(p.getLocation(), Sound.VILLAGER_NO,1,1);
+                                }
                                 break;
                             }
                         }
@@ -107,6 +120,22 @@ public class InventoryListener implements Listener {
             i = i +1;
         }
         return inv;
+    }
+
+    @EventHandler
+    public void ItemPickup(PlayerPickupItemEvent e){
+        Item item = e.getItem();
+        UUID uuid = item.getUniqueId();
+        if(BedWarsGame.itemSpawned.containsKey(uuid)){
+            Generator generator = BedWarsGame.itemSpawned.get(uuid);
+            generator.itemPickup(item.getItemStack().getAmount());
+            BedWarsGame.itemSpawned.remove(uuid);
+        }
+    }
+
+    @EventHandler
+    public void ItemDispawn(ItemDespawnEvent e){
+        e.setCancelled(true);
     }
 
 }

@@ -99,9 +99,9 @@ public class ShopEvent implements Listener {
             case ARCS: return generateItemStackCategorie(Material.BOW,"§aArcs");
             case ARMES: return generateItemStackCategorie(Material.DIAMOND_SWORD,"§aArmes");
             case AUTRES: return generateItemStackCategorie(Material.GOLDEN_APPLE,"§aAutres");
-            case OUTILS: return generateItemStackCategorie(Material.WOOL,"§aOutils");
-            case ARMURES: return generateItemStackCategorie(Material.WOOL,"§aArmures");
-            case POTIONS: return generateItemStackCategorie(Material.WOOL,"§aPotions");
+            case OUTILS: return generateItemStackCategorie(Material.DIAMOND_PICKAXE,"§aOutils");
+            case ARMURES: return generateItemStackCategorie(Material.GOLD_CHESTPLATE,"§aArmures");
+            case POTIONS: return generateItemStackCategorie(Material.POTION,"§aPotions");
         }
         return new ItemStack(Material.BARRIER);
     }

@@ -92,20 +92,15 @@ public class BedWarsGame implements Listener {
         Path path = Paths.get("template");
         Path path2 = Paths.get("bedwars");
         File file = new File(path2.toString());
-        Bukkit.broadcastMessage(file.getAbsolutePath());
         if(file.exists()){
             Bukkit.unloadWorld("bedwars",false);
-            Bukkit.broadcastMessage("UNLOADED");
             Utils.deleteDirectory(file);
-            Bukkit.broadcastMessage("DELETED");
             try {
-                Bukkit.broadcastMessage("COPIED");
                 Utils.copyDirectory(path.toString(), path2.toString());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        Bukkit.broadcastMessage("CREATION...");
         world = Bukkit.createWorld(new WorldCreator("bedwars"));
         if(world == null){
             world = Bukkit.getWorld("bedwars");

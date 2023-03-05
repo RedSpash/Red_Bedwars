@@ -5,10 +5,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.*;
 
 public class Shop {
 
@@ -17,6 +14,24 @@ public class Shop {
     public static void initShopsCategories(){
         initShopsBlocs();
         initShopsArmes();
+        initShopsArmors();
+        initShopsOutils();
+    }
+
+    private static void initShopsOutils(){
+        LinkedList<ItemShop> items = new LinkedList<>();
+        items.add(new ItemShop(new ItemStack(Material.WOOD_PICKAXE),"Améliore votre pioche","Améliore la qualité de votre pioche.",new Prix(Material.BEDROCK,50)));
+        items.add(new ItemShop(new ItemStack(Material.WOOD_AXE),"Améliore votre hache","Améliore la qualité de votre hache.",new Prix(Material.BEDROCK,12)));
+        items.add(new ItemShop(new ItemStack(Material.SHEARS),"Shears","Permet de casser les blocks de laine rapidements.",new Prix(Material.BEDROCK,6)));
+        itemShop.put(ItemCategorie.OUTILS,items);
+    }
+
+    private static void initShopsArmors(){
+        LinkedList<ItemShop> items = new LinkedList<>();
+        items.add(new ItemShop(new ItemStack(Material.CHAINMAIL_CHESTPLATE),"Armure en maille","Une armure de faible protection.",new ArrayList<>(Arrays.asList("  §7- Bottes en maille","  §7- Leggings en maille")),new Prix(Material.IRON_INGOT,50)));
+        items.add(new ItemShop(new ItemStack(Material.IRON_CHESTPLATE),"Armure en fer","Une armure moyenne permettant de bon combat.",new ArrayList<>(Arrays.asList("  §7- Bottes en fer","  §7- Leggings en fer")),new Prix(Material.GOLD_INGOT,12)));
+        items.add(new ItemShop(new ItemStack(Material.DIAMOND_CHESTPLATE),"Armure en diamant","La meilleur protection pour les armures.",new ArrayList<>(Arrays.asList("  §7- Bottes en diamant","  §7- Leggings en diamant")),new Prix(Material.EMERALD,6)));
+        itemShop.put(ItemCategorie.ARMURES,items);
     }
 
     private static void initShopsBlocs() {

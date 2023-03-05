@@ -75,7 +75,7 @@ public class Base {
             }
             BedWarsGame.playerBase.remove(uuid);
         }
-        this.sendMessage("§7"+p.getName()+" vient de rejoindre l'équipe "+Utils.getChatColorOf(this.teamColor)+Utils.getColorName(this.teamColor).toLowerCase()+"§7!");
+        this.sendMessage("§7"+p.getName()+" vient de rejoindre l'équipe "+Utils.upperCaseFirst(Utils.getChatColorOf(this.teamColor)+Utils.getColorName(this.teamColor).toLowerCase())+"§7!");
         BedWarsGame.playerBase.put(uuid,this);
     }
 

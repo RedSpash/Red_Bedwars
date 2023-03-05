@@ -47,7 +47,7 @@ public class testcommande implements CommandExecutor {
                         p.setGameMode(GameMode.SURVIVAL);
                     }
                 }else if(strings[0].equalsIgnoreCase("shop")){
-                    ShopEvent.openShopInventory(p, ItemCategorie.BLOC);
+                    ShopEvent.openShopInventory(p, ItemCategorie.BLOCS);
                 }else{
                     p.teleport(Bukkit.getWorld(strings[0]).getSpawnLocation());
                 }

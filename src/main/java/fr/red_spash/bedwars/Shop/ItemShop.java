@@ -1,7 +1,6 @@
 package fr.red_spash.bedwars.Shop;
 
 import fr.red_spash.bedwars.utils.Utils;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -16,6 +15,7 @@ public class ItemShop {
     private String desription;
     private Prix prix;
     private ArrayList<String> informations;
+    private boolean special = false;
 
 
     public ItemShop(ItemStack itemStack,String name, String desription, Prix prix){
@@ -28,6 +28,11 @@ public class ItemShop {
         this.desription = desription;
         this.prix = prix;
         this.informations = informations;
+    }
+
+    public ItemShop setSpecial() {
+        this.special = true;
+        return this;
     }
 
     public ArrayList<String> getInformations() {
@@ -96,5 +101,35 @@ public class ItemShop {
             case EMERALD:return "§2";
         }
         return "§d";
+    }
+
+    public ItemStack givableItemStack() {
+        if(special){
+            ItemStack itemStack = this.itemStack.clone();
+            ItemMeta itemMeta = itemStack.getItemMeta();
+            itemMeta.setDisplayName("§a"+this.name);
+            ArrayList<String> descriptionList = new ArrayList<>();
+
+            if(this.desription.split(" ").length > 5){
+                ArrayList<String> list = new ArrayList<>(Arrays.asList(this.desription.split(" ")));
+                String message = "";
+                for(String element : list.subList(0,(int) list.size()/2)){
+                    message = message +element+" ";
+                }
+                descriptionList.add("§f"+message);
+
+                message = "";
+                for(String element : list.subList(list.size()/2,list.size())){
+                    message = message +element+" ";
+                }
+                descriptionList.add("§f"+message);
+            }else{
+                descriptionList.add("§f"+this.desription);
+            }
+            itemMeta.setLore(descriptionList);
+            itemStack.setItemMeta(itemMeta);
+            return itemStack;
+        }
+        return itemStack;
     }
 }

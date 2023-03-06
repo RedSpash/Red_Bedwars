@@ -29,7 +29,7 @@ public class Prix {
     public void buy(Player p){
         ItemStack itemStack = new ItemStack(itemTypeNeed);
         itemStack.setAmount(amount);
-        p.getInventory().remove(itemStack);
+        p.getInventory().removeItem(itemStack);
     }
 
 }

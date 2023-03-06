@@ -8,7 +8,10 @@ import fr.red_spash.bedwars.utils.Utils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.libs.jline.internal.Nullable;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -142,6 +145,22 @@ public class BedWarsGame implements Listener {
                             if(canAdd){
                                 Beds.add(block);
                             }
+                        } else if (block.getType() == Material.REDSTONE_BLOCK) {
+                            if(upperblock.getLocation().add(0,1,0).getBlock().getType() == Material.AIR){
+                                Villager villager = (Villager) world.spawnEntity(upperblock.getLocation().add(0,1,0).getBlock().getLocation(), EntityType.VILLAGER);
+                                Utils.setAI(villager,false);
+                                Utils.setSilent(villager,true);
+                                villager.setCustomName("§6§lItems");
+                                villager.setCustomNameVisible(true);
+                            }
+                        }else if (block.getType() == Material.LAPIS_BLOCK) {
+                            if(upperblock.getLocation().add(0,1,0).getBlock().getType() == Material.AIR){
+                                Villager villager = (Villager) world.spawnEntity(upperblock.getLocation().add(0,1,0).getBlock().getLocation(), EntityType.VILLAGER);
+                                Utils.setAI(villager,false);
+                                Utils.setSilent(villager,true);
+                                villager.setCustomName("§6§lAméliorations");
+                                villager.setCustomNameVisible(true);
+                            }
                         }
                     }
                 }
@@ -178,6 +197,19 @@ public class BedWarsGame implements Listener {
                     Location location = CloserBase.getItemGeneratorLocation().add(vector.add(new Vector(0,1,0))).setDirection(vector);
                     location.setPitch(0);
                     CloserBase.setSpawnLocation(location);
+                    for(Entity entity : location.getWorld().getNearbyEntities(location,10,5,10)){
+                        if(entity instanceof Villager){
+                            Villager villager = (Villager) entity;
+                            if(villager.getCustomName() != null){
+                                Bukkit.broadcastMessage("villager find: "+villager.getCustomName());
+                                if(villager.getCustomName().equalsIgnoreCase("§6§lAméliorations")){
+                                    CloserBase.setUpgradesVillager(villager);
+                                } else if (villager.getCustomName().equalsIgnoreCase("§6§lItems")) {
+                                    CloserBase.setItemsShopVillager(villager);
+                                }
+                            }
+                        }
+                    }
                 }else{
                     Bukkit.broadcastMessage("§cErreur lors du chargement du lit en "+bed.getLocation().toString());
                 }

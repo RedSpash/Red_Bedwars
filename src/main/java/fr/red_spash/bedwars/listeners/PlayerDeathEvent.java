@@ -197,7 +197,8 @@ public class PlayerDeathEvent implements Listener {
                     base.setDefaultInventory(p);
                     return;
                 }
-                Utils.sendTitle(p,"§c§lVous êtes mort !","§eRespawn dans "+i+" secondes",0,21,0);
+                Utils.sendTitle(p,"§c§lVous êtes mort !","§eRespawn dans "+i+" secondes",0,22,0);
+                p.playSound(p.getLocation(), Sound.CLICK,1,1);
                 i = i -1;
             }
         },0,20);

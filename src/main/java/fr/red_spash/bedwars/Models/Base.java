@@ -8,14 +8,19 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.xml.sax.helpers.LocatorImpl;
 
 import java.util.ArrayList;
 import java.util.UUID;
 
 public class Base {
+
+    private Villager itemsShop;
+    private Villager upgrades;
     private DyeColor teamColor;
     private ArrayList<UUID> playersUUID = new ArrayList<>();
     private Location bedLocation;
@@ -31,6 +36,20 @@ public class Base {
         //speed true: 0.666666
         this.forge = new Forge(itemGeneratorLocation,1.0, BedWarsGame.MAX_ITEM_FORGE);
         BedWarsGame.bases.add(this);
+    }
+
+    public void setUpgradesVillager(Villager upgrades) {
+        upgrades.setProfession(Villager.Profession.FARMER);
+        this.upgrades = upgrades;
+        Location location = upgrades.getLocation();
+        location.setYaw(this.spawnLocation.getYaw()+90);
+        location.add(0.5,0,0.5);
+        upgrades.teleport(location);
+    }
+
+    public void setItemsShopVillager(Villager itemsShop) {
+        itemsShop.setProfession(Villager.Profession.FARMER);
+        this.itemsShop = itemsShop;
     }
 
     public void setSpawnLocation(Location spawnLocation) {

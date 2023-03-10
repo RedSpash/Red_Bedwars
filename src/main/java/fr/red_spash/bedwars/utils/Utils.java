@@ -4,8 +4,10 @@ import net.minecraft.server.v1_8_R3.*;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -222,4 +224,29 @@ public class Utils {
         return itemStack;
 
     }
+
+    public static void setRotation(LivingEntity entity, float yaw, float pitch) {
+        EntityLiving nmsEntity = ((CraftLivingEntity) entity).getHandle();
+        nmsEntity.pitch = pitch;
+        nmsEntity.lastPitch = pitch;
+        nmsEntity.yaw = yaw;
+        nmsEntity.lastYaw = yaw;
+    }
+
+    public static ItemStack materialWithEnchant(Material material, Enchantment enchantment, int i) {
+        ItemStack itemStack = new ItemStack(material);
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        itemMeta.addEnchant(enchantment,i,true);
+        itemStack.setItemMeta(itemMeta);
+        return itemStack;
+    }
+
+    public static ItemStack makeUnbreakable(ItemStack itemStack) {
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        itemMeta.spigot().setUnbreakable(true);
+        itemStack.setItemMeta(itemMeta);
+        return itemStack;
+    }
+
+
 }

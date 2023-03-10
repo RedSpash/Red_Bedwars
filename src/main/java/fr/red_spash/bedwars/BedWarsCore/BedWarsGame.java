@@ -148,18 +148,17 @@ public class BedWarsGame implements Listener {
                         } else if (block.getType() == Material.REDSTONE_BLOCK) {
                             if(upperblock.getLocation().add(0,1,0).getBlock().getType() == Material.AIR){
                                 Villager villager = (Villager) world.spawnEntity(upperblock.getLocation().add(0,1,0).getBlock().getLocation(), EntityType.VILLAGER);
-                                Utils.setAI(villager,false);
                                 Utils.setSilent(villager,true);
-                                villager.setCustomName("§6§lItems");
                                 villager.setCustomNameVisible(true);
+                                villager.setCustomName("§6§lItems");
+
                             }
                         }else if (block.getType() == Material.LAPIS_BLOCK) {
                             if(upperblock.getLocation().add(0,1,0).getBlock().getType() == Material.AIR){
                                 Villager villager = (Villager) world.spawnEntity(upperblock.getLocation().add(0,1,0).getBlock().getLocation(), EntityType.VILLAGER);
-                                Utils.setAI(villager,false);
                                 Utils.setSilent(villager,true);
-                                villager.setCustomName("§6§lAméliorations");
                                 villager.setCustomNameVisible(true);
+                                villager.setCustomName("§6§lAméliorations");
                             }
                         }
                     }
@@ -201,12 +200,16 @@ public class BedWarsGame implements Listener {
                         if(entity instanceof Villager){
                             Villager villager = (Villager) entity;
                             if(villager.getCustomName() != null){
+                                Bukkit.broadcastMessage("§c"+villager.getLocation().getYaw()+"");
                                 Bukkit.broadcastMessage("villager find: "+villager.getCustomName());
                                 if(villager.getCustomName().equalsIgnoreCase("§6§lAméliorations")){
+                                    Bukkit.broadcastMessage("§avillager find: "+villager.getCustomName());
                                     CloserBase.setUpgradesVillager(villager);
                                 } else if (villager.getCustomName().equalsIgnoreCase("§6§lItems")) {
+                                    Bukkit.broadcastMessage("§avillager find: "+villager.getCustomName());
                                     CloserBase.setItemsShopVillager(villager);
                                 }
+                                Bukkit.broadcastMessage("§a"+villager.getLocation().getYaw()+"");
                             }
                         }
                     }

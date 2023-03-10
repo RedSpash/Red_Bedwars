@@ -1,5 +1,8 @@
 package fr.red_spash.bedwars.Items;
 
+import fr.red_spash.bedwars.Shop.Applications.BasicItem;
+import fr.red_spash.bedwars.Shop.Applications.ItemShop;
+import fr.red_spash.bedwars.Shop.Prix;
 import fr.red_spash.bedwars.listeners.InventoryListener;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -13,4 +16,9 @@ public class Items {
         itemStack.setItemMeta(itemMeta);
         return itemStack;
     }
+
+    public static ItemShop getLastItem(){
+        return new BasicItem(new ItemStack(Material.BARRIER),"§c§lLimite atteinte","§cVous ne pouvez pas améliorer §ccette item plus que ça.",new Prix(null,-1));
+    }
+
 }

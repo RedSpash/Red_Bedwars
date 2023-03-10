@@ -1,5 +1,6 @@
-package fr.red_spash.bedwars.Shop;
+package fr.red_spash.bedwars.Shop.Applications;
 
+import fr.red_spash.bedwars.Shop.Prix;
 import fr.red_spash.bedwars.utils.Utils;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
@@ -9,13 +10,15 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class ItemShop {
+public abstract class ItemShop {
     private ItemStack itemStack;
     private String name;
     private String desription;
     private Prix prix;
     private ArrayList<String> informations;
     private boolean special = false;
+    private boolean onlyOne = false;
+    private int maxItemInInventory = -1;
 
 
     public ItemShop(ItemStack itemStack,String name, String desription, Prix prix){
@@ -28,6 +31,24 @@ public class ItemShop {
         this.desription = desription;
         this.prix = prix;
         this.informations = informations;
+    }
+
+    public ItemShop setMaxItemInInventory(int maxItemInInventory) {
+        this.maxItemInInventory = maxItemInInventory;
+        return this;
+    }
+
+    public int getMaxItemInInventory() {
+        return maxItemInInventory;
+    }
+
+    public boolean getOnlyOne() {
+        return onlyOne;
+    }
+
+    public ItemShop setOnlyOne(boolean onlyOne) {
+        this.onlyOne = onlyOne;
+        return this;
     }
 
     public ItemShop setSpecial() {
@@ -75,19 +96,20 @@ public class ItemShop {
                 message = message +element+" ";
             }
             descriptionList.add("§f"+message);
-        }else{
+        }else if (!this.desription.equalsIgnoreCase("")){
             descriptionList.add("§f"+this.desription);
         }
 
         if(this.informations != null){
             descriptionList.add("§f");
-            descriptionList.add("§aContient:");
             for(String msg : this.informations){
                 descriptionList.add("§7"+msg);
             }
         }
         descriptionList.add("§f");
-        descriptionList.add("§6Prix: "+prixColor(this.prix.getItemTypeNeed())+this.prix.getAmount()+" "+ Utils.upperCaseFirst(this.prix.getItemTypeNeed().toString().toLowerCase().replace("_"," ")));
+        if(this.prix.getAmount() != -1){
+            descriptionList.add("§6Prix: "+prixColor(this.prix.getItemTypeNeed())+this.prix.getAmount()+" "+ Utils.upperCaseFirst(this.prix.getItemTypeNeed().toString().toLowerCase().replace("_"," ")));
+        }
         itemMeta.setLore(descriptionList);
         itemStack.setItemMeta(itemMeta);
         return itemStack;

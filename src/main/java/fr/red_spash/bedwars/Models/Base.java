@@ -7,11 +7,14 @@ import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
+import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.util.Vector;
 import org.xml.sax.helpers.LocatorImpl;
 
 import java.util.ArrayList;
@@ -30,6 +33,8 @@ public class Base {
 
     private int respawnTime = 5;
 
+
+
     public Base(Location itemGeneratorLocation, DyeColor teamColor){
         this.itemGeneratorLocation = itemGeneratorLocation;
         this.teamColor = teamColor;
@@ -38,18 +43,31 @@ public class Base {
         BedWarsGame.bases.add(this);
     }
 
-    public void setUpgradesVillager(Villager upgrades) {
-        upgrades.setProfession(Villager.Profession.FARMER);
-        this.upgrades = upgrades;
-        Location location = upgrades.getLocation();
-        location.setYaw(this.spawnLocation.getYaw()+90);
-        location.add(0.5,0,0.5);
-        upgrades.teleport(location);
+    public String getTeamName() {
+        return Utils.getChatColorOf(this.teamColor)+Utils.upperCaseFirst(Utils.getColorName(this.teamColor));
     }
 
-    public void setItemsShopVillager(Villager itemsShop) {
-        itemsShop.setProfession(Villager.Profession.FARMER);
-        this.itemsShop = itemsShop;
+    public void setUpgradesVillager(Villager villager) {
+        villager.setProfession(Villager.Profession.FARMER);
+        this.upgrades = villager;
+        Location location = villager.getLocation();
+        location.setYaw(90);
+        location.setPitch(90);
+        location.add(0.5,0,0.5);
+        Utils.setRotation(villager,90,0);
+    }
+
+    public void setItemsShopVillager(Villager villager) {
+        villager.setProfession(Villager.Profession.FARMER);
+        this.itemsShop = villager;
+        Location location = villager.getLocation();
+        villager.teleport(new Location(villager.getWorld(),0,100,0));
+        Vector dirBetweenLocations = villager.getLocation().toVector().subtract(this.spawnLocation.clone().toVector()).multiply(-1);
+        location.setDirection(dirBetweenLocations);
+        location.add(0.5,0,0.5);
+        villager.teleport(location);
+        Utils.setAI(villager,false);
+        Utils.setSilent(villager,true);
     }
 
     public void setSpawnLocation(Location spawnLocation) {
@@ -94,7 +112,7 @@ public class Base {
             }
             BedWarsGame.playerBase.remove(uuid);
         }
-        this.sendMessage("§7"+p.getName()+" vient de rejoindre l'équipe "+Utils.upperCaseFirst(Utils.getChatColorOf(this.teamColor)+Utils.getColorName(this.teamColor).toLowerCase())+"§7!");
+        this.sendMessage("§7"+p.getName()+" vient de rejoindre l'équipe "+this.getTeamName()+"§7!");
         BedWarsGame.playerBase.put(uuid,this);
     }
 

@@ -8,6 +8,7 @@ public class Prix {
 
     private int amount;
     private Material itemTypeNeed;
+    private boolean CheatMod = true;
 
     public Prix(Material itemTypeNeed,int amount){
         this.amount = amount;
@@ -23,7 +24,7 @@ public class Prix {
     }
 
     public boolean canBuy(Player p){
-        return p.getInventory().containsAtLeast(new ItemStack(itemTypeNeed),amount);
+        return p.getInventory().containsAtLeast(new ItemStack(itemTypeNeed),amount) || CheatMod;
     }
 
     public void buy(Player p){

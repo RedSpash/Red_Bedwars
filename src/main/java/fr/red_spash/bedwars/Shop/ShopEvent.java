@@ -1,5 +1,7 @@
 package fr.red_spash.bedwars.Shop;
 
+import fr.red_spash.bedwars.Shop.Applications.ItemShop;
+import fr.red_spash.bedwars.Shop.Applications.UpgradableItem;
 import fr.red_spash.bedwars.utils.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
@@ -59,17 +61,70 @@ public class ShopEvent implements Listener {
                                     if(e.getSlot() <= 8){
                                         ItemCategorie categorie = Enum.valueOf(ItemCategorie.class,(item.getItemMeta().getDisplayName().replace("§l","").substring(2)).toUpperCase());
                                         openShopInventory(p,categorie);
-                                    }else if(e.getSlot() >= 19){
+                                    }else if(e.getSlot() >= 19) {
                                         //SHOP
-                                        for(ItemShop shop : Shop.itemShop.get(playerCategorie.get(p.getUniqueId()))){
-                                            if(shop.getItemStack().getItemMeta().getDisplayName().equalsIgnoreCase(item.getItemMeta().getDisplayName())){
-                                                if(shop.getPrix().canBuy(p)){
-                                                    shop.getPrix().buy(p);
-                                                    p.getInventory().addItem(shop.givableItemStack());
-                                                    p.playSound(p.getLocation(), Sound.ORB_PICKUP,2,1);
+                                        ItemShop findedShop = null;
+                                        for (ItemShop shop : Shop.itemShop.get(playerCategorie.get(p.getUniqueId()))) {
+                                            if(shop instanceof UpgradableItem){
+                                                UpgradableItem upgradableItem = (UpgradableItem) shop;
+
+                                                while(upgradableItem.getUpgrade() != null && !upgradableItem.getItemStack().isSimilar(item)){
+                                                    Bukkit.broadcastMessage(upgradableItem.getItemStack().getType()+"");
+                                                    upgradableItem = upgradableItem.getUpgrade();
+                                                }
+                                                if(upgradableItem.getItemStack().isSimilar(item)){
+                                                    findedShop = upgradableItem;
+                                                    break;
+                                                }
+                                            }else if (shop.getItemStack().getItemMeta().getDisplayName().equalsIgnoreCase(item.getItemMeta().getDisplayName())) {
+                                                findedShop = shop;
+                                                break;
+                                            }
+                                        }
+                                        if(findedShop != null) {
+                                            if (findedShop.getPrix().getAmount() == -1) {
+                                                return;
+                                            }
+                                            if (findedShop.getPrix().canBuy(p)) {
+                                                findedShop.getPrix().buy(p);
+                                                p.playSound(p.getLocation(), Sound.ORB_PICKUP, 2, 1);
+                                                if(findedShop instanceof UpgradableItem){
+                                                    UpgradableItem upgradableItem = (UpgradableItem) findedShop;
+                                                    upgradableItem.getMain().addOneLevel(p);
+                                                    openShopInventory(p,playerCategorie.get(p.getUniqueId()));
+                                                }
+                                                if(findedShop.getOnlyOne()){
+                                                    String[] splitedWord = findedShop.getItemStack().getType().toString().split("_");
+                                                    if(splitedWord.length <= 2){
+                                                        String word = splitedWord[splitedWord.length-1];
+                                                        int position = -1;
+                                                        for(int i =0; i< p.getInventory().getSize(); i++){
+                                                            ItemStack itemStack = p.getInventory().getItem(i);
+                                                            if(itemStack != null){
+                                                                if(itemStack.getType().toString().contains("_"+word)){
+                                                                    position = i;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                        if(position == -1){
+                                                            for(int i = 0; i < p.getInventory().getArmorContents().length; i++){
+                                                                ItemStack itemStack = p.getInventory().getArmorContents()[i];
+                                                                if(itemStack != null){
+                                                                    if(itemStack.getType().toString().contains("_"+word)){
+                                                                        position = i;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        if(position == -1){
+                                                            position = p.getInventory().firstEmpty();
+                                                        }
+                                                        p.getInventory().setItem(position,findedShop.givableItemStack());
+                                                    }
                                                 }else{
-                                                    p.sendMessage("§cVous n'avez pas les ressources nécessaires !");
-                                                    p.playSound(p.getLocation(), Sound.VILLAGER_NO,1,1);
+                                                    p.getInventory().addItem(findedShop.givableItemStack());
                                                 }
                                             }
                                         }
@@ -92,7 +147,6 @@ public class ShopEvent implements Listener {
         int i =1;
         for(ItemCategorie itemCategorie : Shop.itemShop.keySet()){
             ItemStack itemStack = getBlockCategorie(itemCategorie);
-            Bukkit.broadcastMessage(itemStack.getType()+"");
             if(categorie == itemCategorie){
                 ItemMeta itemMeta = itemStack.getItemMeta();
                 itemMeta.addEnchant(Enchantment.DURABILITY,1,true);
@@ -106,6 +160,10 @@ public class ShopEvent implements Listener {
 
         i = 19;
         for(ItemShop itemShop : Shop.itemShop.get(categorie)){
+            if(itemShop instanceof UpgradableItem){
+                UpgradableItem upgradableItem = (UpgradableItem) itemShop;
+                itemShop = upgradableItem.getItemShop(player);
+            }
             inv.setItem(i,itemShop.getItemStack());
             i = i +1;
 

@@ -5,6 +5,7 @@ import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
 import fr.red_spash.bedwars.Scoreboard.ScoreboardManager;
 import fr.red_spash.bedwars.utils.GameState;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
@@ -30,6 +31,13 @@ public class SpawnListener implements Listener {
                         p.sendMessage("§cVous n'avez pas les permissions pour lancer une partie !");
                     }
                 }
+            }else{
+                Location loca = villager.getLocation();
+                loca.setYaw(loca.getYaw()+2);
+                villager.teleport(loca);
+                Bukkit.broadcastMessage(loca.getYaw()+"");
+                e.setCancelled(true);
+
             }
         }
     }

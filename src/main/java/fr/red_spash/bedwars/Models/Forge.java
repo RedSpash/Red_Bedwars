@@ -32,6 +32,7 @@ public class Forge extends Generator{
         this.tier = 1;
         this.limitItem = limitItem;
         BedWarsGame.Forges.add(this);
+        BedWarsGame.protectZone(this.location,2);
     }
 
     public void setTier(int tier) {
@@ -54,7 +55,7 @@ public class Forge extends Generator{
 
     public void startSpawn(){
         Forge forge = this;
-        Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
+        this.bukkitTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
             @Override
             public void run() {
                 forge.removeTimeNextItem(0.05);
@@ -94,5 +95,9 @@ public class Forge extends Generator{
         BedWarsGame.itemSpawned.put(iron.getUniqueId(),this);
 
 
+    }
+
+    public void delete() {
+        this.bukkitTask.cancel();
     }
 }

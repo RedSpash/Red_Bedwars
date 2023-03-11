@@ -7,7 +7,6 @@ import fr.red_spash.bedwars.utils.GameState;
 import fr.red_spash.bedwars.utils.Utils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.libs.jline.internal.Nullable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -15,10 +14,9 @@ import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -29,10 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 
 public class BedWarsGame implements Listener {
 
@@ -49,7 +44,7 @@ public class BedWarsGame implements Listener {
     private static BukkitTask decompte;
     public static World world;
 
-    private static ArrayList<UUID> playerSpectator = new ArrayList<>();
+    public static ArrayList<UUID> playerSpectator = new ArrayList<>();
     private static final ArrayList<DyeColor> allColor = new ArrayList<>(Arrays.asList(
             DyeColor.CYAN,
             DyeColor.RED,
@@ -58,58 +53,111 @@ public class BedWarsGame implements Listener {
             DyeColor.GRAY,
             DyeColor.ORANGE,
             DyeColor.LIME,
-            DyeColor.PURPLE,
-            DyeColor.WHITE,
+            DyeColor.MAGENTA,
+            DyeColor.LIGHT_BLUE,
             DyeColor.YELLOW,
             DyeColor.GREEN));
     public static ArrayList<Base> bases = new ArrayList<>();
-    public static HashMap<UUID,Base> playerBase = new HashMap<>();
+    public static HashMap<UUID,PlayerData> playersDatas = new HashMap<>();
     public static HashMap<UUID, Generator> itemSpawned = new HashMap<>();
     public static ArrayList<ItemGenerator> ItemGenerators = new ArrayList<>();
     public static GameState gameStat = GameState.Waiting;
     public static Location spawn = null;
 
     public static ArrayList<Location> blockBreakable = new ArrayList<>();
+    public static ArrayList<Location> locationNotPlaceable = new ArrayList<>();
 
     @EventHandler
     public void PlayerBreakBlock(BlockBreakEvent e){
-        if(!blockBreakable.contains(e.getBlock().getLocation())){
-            if(!e.getPlayer().isOp() || e.getPlayer().getGameMode() == GameMode.SURVIVAL){
+        Player p = e.getPlayer();
+        if(gameStat != GameState.Started && !p.isOp()){
+            e.setCancelled(true);
+            return;
+        }
+        if(BedWarsGame.inRespawn.containsKey(p.getUniqueId()) || BedWarsGame.playerSpectator.contains(p.getUniqueId())){
+            if(p.getGameMode() != GameMode.CREATIVE){
                 e.setCancelled(true);
-                e.getPlayer().sendMessage("§cImpossible de casser le block !");
+                return;
+            }
+        }
+        Block block = e.getBlock();
+        Base base = null;
+
+        if(block.getType() == Material.BED_BLOCK){
+            for(Base b : bases){
+                if(b.isMyBed(block)){
+                    base = b;
+                }
+            }
+            if(base != null){
+                if(base.getPlayersUUID().contains(p.getUniqueId())){
+                    e.setCancelled(true);
+                    p.sendMessage("§cTu ne peux pas casser ton lit !");
+                    return;
+                }
+                block.getWorld().strikeLightning(block.getLocation().add(0.5,0,0.5));
+                PlayerData playerData = playersDatas.get(p.getUniqueId());
+                Bukkit.broadcastMessage("§c\n§c§lDESTRUCTION DE LIT > §7Le "+Utils.getChatColorOf(base.getColor())+"lit de l'équipe "+base.getTeamName()+" §7vient d'être détruit par "+playerData.getNameWithColor()+"!\n§f§o  §f  \n§f");
+                base.setAsBed(false);
+                for(Player pl : Bukkit.getOnlinePlayers()){
+                    pl.playSound(pl.getLocation(), Sound.ENDERDRAGON_GROWL,1,1);
+                }
+                checkIsEnd();
+                return;
+            }
+
+        }
+        if(!blockBreakable.contains(e.getBlock().getLocation())){
+            if(!p.isOp() ||p.getGameMode() == GameMode.SURVIVAL){
+                e.setCancelled(true);
+                p.sendMessage("§cImpossible de casser le block !");
             }
         }
     }
 
     @EventHandler
     public void BlockPlace(BlockPlaceEvent e){
-        if(!e.getPlayer().isOp() || e.getPlayer().getGameMode() == GameMode.SURVIVAL){
-            blockBreakable.add(e.getBlock().getLocation());
+        Block block = e.getBlock();
+        Player p = e.getPlayer();
+        if(gameStat != GameState.Started && !p.isOp()){
+            e.setCancelled(true);
+            return;
+        }
+        if(locationNotPlaceable.contains(block.getLocation())){
+            e.setCancelled(true);
+            p.sendMessage("§cImpossible de placer une block ici !");
+            return;
+        }
+        if(!p.isOp() || p.getGameMode() == GameMode.SURVIVAL){
+            blockBreakable.add(block.getLocation());
         }
     }
 
 
     public static void startGame() {
-        Bukkit.broadcastMessage("§e§lCréation en cours de la partie de Bedwars...");
-        ArrayList<DyeColor> colors = (ArrayList<DyeColor>) allColor.clone();
-        Path path = Paths.get("template");
-        Path path2 = Paths.get("bedwars");
-        File file = new File(path2.toString());
-        if(file.exists()){
-            Bukkit.unloadWorld("bedwars",false);
-            Utils.deleteDirectory(file);
-            try {
-                Utils.copyDirectory(path.toString(), path2.toString());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        if (Bukkit.getWorld("bedwars") != null) {
+            for(Player p : Bukkit.getWorld("bedwars").getPlayers()){
+                p.teleport(Main.SPAWN_LOCATION);
             }
         }
+
+        for(Player pl : Bukkit.getOnlinePlayers()){
+            pl.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,100000*20,5,false,false));
+            pl.addPotionEffect(new PotionEffect(PotionEffectType.JUMP,100000*20,250,false,false));
+            pl.setSprinting(false);
+            pl.setWalkSpeed(0);
+        }
+        Bukkit.broadcastMessage("§e§lCréation en cours de la partie de Bedwars...");
+        ArrayList<DyeColor> colors = (ArrayList<DyeColor>) allColor.clone();
+        deleteWorld();
+        Bukkit.broadcastMessage("§aCréation du monde...");
         world = Bukkit.createWorld(new WorldCreator("bedwars"));
         if(world == null){
             world = Bukkit.getWorld("bedwars");
         }
 
         if(world != null){
+            Bukkit.broadcastMessage("§aScan en cours du monde...");
             world.setGameRuleValue("mobGriefing","false");
             world.setGameRuleValue("doDaylightCycle","false");
             world.setGameRuleValue("doFireTick","false");
@@ -164,7 +212,8 @@ public class BedWarsGame implements Listener {
                     }
                 }
             }
-
+            Bukkit.broadcastMessage("§aScan terminé : "+bases.size()+" bases trouvées !");
+            Bukkit.broadcastMessage("§aPositionnement des points de réapparitions...");
             for(Block bed : Beds){
                 double distance = 1000.0;
                 Base CloserBase = null;
@@ -200,16 +249,11 @@ public class BedWarsGame implements Listener {
                         if(entity instanceof Villager){
                             Villager villager = (Villager) entity;
                             if(villager.getCustomName() != null){
-                                Bukkit.broadcastMessage("§c"+villager.getLocation().getYaw()+"");
-                                Bukkit.broadcastMessage("villager find: "+villager.getCustomName());
                                 if(villager.getCustomName().equalsIgnoreCase("§6§lAméliorations")){
-                                    Bukkit.broadcastMessage("§avillager find: "+villager.getCustomName());
                                     CloserBase.setUpgradesVillager(villager);
                                 } else if (villager.getCustomName().equalsIgnoreCase("§6§lItems")) {
-                                    Bukkit.broadcastMessage("§avillager find: "+villager.getCustomName());
                                     CloserBase.setItemsShopVillager(villager);
                                 }
-                                Bukkit.broadcastMessage("§a"+villager.getLocation().getYaw()+"");
                             }
                         }
                     }
@@ -217,6 +261,7 @@ public class BedWarsGame implements Listener {
                     Bukkit.broadcastMessage("§cErreur lors du chargement du lit en "+bed.getLocation().toString());
                 }
             }
+            Bukkit.broadcastMessage("§aTéléportation des joueurs ...");
             for(Base base : bases){
                 base.setBaseColor(true);
             }
@@ -224,10 +269,15 @@ public class BedWarsGame implements Listener {
             for(Player pl : Bukkit.getOnlinePlayers()){
                 pl.teleport(spawn);
                 pl.getInventory().clear();
+                pl.getEquipment().clear();
                 pl.getInventory().setItem(4, Items.getEquipeItem());
+                Utils.clearArmor(pl);
+                for(PotionEffect potionEffect : pl.getActivePotionEffects()){
+                    pl.removePotionEffect(potionEffect.getType());
+                }
+                pl.setWalkSpeed(0.2F);
             }
         }
-
         BedWarsGame.checkCanStart();
     }
 
@@ -245,90 +295,244 @@ public class BedWarsGame implements Listener {
                 int i = 20;
                 @Override
                 public void run() {
-                    if(i == 0){
-                        Bukkit.broadcastMessage("§a§lLancement de la partie !");
-                        decompte.cancel();
-                        decompte = null;
-                        gameStat = GameState.Started;
+                    List<Player> allplayers = (List<Player>) Bukkit.getOnlinePlayers();
+                    if(allplayers.size() > 0){
+                        Player firstplayer = allplayers.get(0);
+                        if(firstplayer.getWorld().getName().equalsIgnoreCase("bedwars")){
+                            if(i == 0){
+                                Bukkit.broadcastMessage("§a§lLancement de la partie !");
+                                decompte.cancel();
+                                decompte = null;
+                                gameStat = GameState.Started;
 
-                        for(Player p : Bukkit.getWorld("bedwars").getPlayers()){
-                            p.getEnderChest().clear();
-                            Utils.sendTitle(p,"§a§lC'est parti !","§7Développé par Red_Spash#5918",0,40,20);
-                            if(BedWarsGame.playerBase.containsKey(p.getUniqueId())){
-                                Base base = playerBase.get(p.getUniqueId());
-                                p.teleport(base.getSpawnLocation());
-                                base.setDefaultInventory(p);
-                                p.setGameMode(GameMode.SURVIVAL);
-                            }else{
-                                ArrayList<Base> base = (ArrayList<Base>) bases.clone();
-                                Base temp = base.get(Utils.random_number(0,base.size()-1));
-                                while(temp.isFull() && base.size() > 1){
-                                    base.remove(temp);
-                                    temp = base.get(Utils.random_number(0,base.size()-1));
-                                }
-                                if(temp.isFull()){
-                                    BedWarsGame.addSpectator(p.getUniqueId());
-                                }else{
-                                    temp.addPlayer(p.getUniqueId());
-                                    p.teleport(temp.getSpawnLocation());
-                                    temp.setDefaultInventory(p);
-                                    p.setGameMode(GameMode.SURVIVAL);
-                                }
-
-                            }
-                        }
-
-                        for(ItemGenerator itemGenerator : BedWarsGame.ItemGenerators){
-                            itemGenerator.startSpawn();
-                        }
-
-                        for(Forge forge : BedWarsGame.Forges){
-                            forge.startSpawn();
-                        }
-
-                        int RADIUS = 15;
-                        int i =0;
-                        for(int x = RADIUS; x>= -RADIUS; x--) {
-                            for (int y = RADIUS; y >= -RADIUS; y--) {
-                                int finalX = x;
-                                int finalY = y;
-                                Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        for (int z = RADIUS; z >= -RADIUS; z--) {
-                                            Block block = BedWarsGame.spawn.clone().add(finalX, z,finalY).getBlock();
-                                            block.setType(Material.AIR);
+                                for(Player p : Bukkit.getWorld("bedwars").getPlayers()){
+                                    p.getEnderChest().clear();
+                                    Utils.sendTitle(p,"§a§lC'est parti !","§7Développé par Red_Spash#5918",0,40,20);
+                                    if(BedWarsGame.playersDatas.get(p.getUniqueId()).getBase() != null){
+                                        PlayerData playerData = playersDatas.get(p.getUniqueId());
+                                        p.teleport(playerData.getBase().getSpawnLocation());
+                                        playerData.setDefaultInventory();
+                                        p.setGameMode(GameMode.SURVIVAL);
+                                    }else{
+                                        ArrayList<Base> base = (ArrayList<Base>) bases.clone();
+                                        Base temp = base.get(Utils.random_number(0,base.size()-1));
+                                        while(temp.isFull() && base.size() > 1){
+                                            base.remove(temp);
+                                            temp = base.get(Utils.random_number(0,base.size()-1));
+                                        }
+                                        if(temp.isFull()){
+                                            BedWarsGame.addSpectator(p.getUniqueId());
+                                        }else{
+                                            temp.addPlayer(p.getUniqueId());
+                                            p.teleport(temp.getSpawnLocation());
+                                            p.setGameMode(GameMode.SURVIVAL);
+                                            playersDatas.get(p.getUniqueId()).setBase(temp);
+                                            playersDatas.get(p.getUniqueId()).setDefaultInventory();
                                         }
                                     }
-                                },i);
-                                i =i +1;
+                                }
+                                for(ItemGenerator itemGenerator : BedWarsGame.ItemGenerators){
+                                    itemGenerator.startSpawn();
+                                }
+
+                                for(Forge forge : BedWarsGame.Forges){
+                                    forge.startSpawn();
+                                }
+
+                                for(Base base : bases){
+                                    if(base.getPlayersUUID().size() == 0){
+                                        base.setBaseColor(false);
+                                        base.removeBed();
+                                    }
+                                }
+
+                                int RADIUS = 15;
+                                int i =0;
+                                for(int x = RADIUS; x>= -RADIUS; x--) {
+                                    for (int y = RADIUS; y >= -RADIUS; y--) {
+                                        int finalX = x;
+                                        int finalY = y;
+                                        Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                for (int z = RADIUS; z >= -RADIUS; z--) {
+                                                    if(BedWarsGame.spawn != null){
+                                                        Block block = BedWarsGame.spawn.clone().add(finalX, z,finalY).getBlock();
+                                                        block.setType(Material.AIR);
+                                                    }
+                                                }
+                                            }
+                                        },i);
+                                        i =i +1;
+                                    }
+                                }
+                                return;
                             }
-                        }
-                        return;
-                    }
-                    if(i%10 == 0 || i%5 == 0  || i <= 10){
-                        Bukkit.broadcastMessage("§eLancement de la partie dans §6"+i+" seconde(s)§e !");
-                        boolean title = false;
-                        if(i<=5){
-                            title = true;
-                        }
-                        for(Player pl : Bukkit.getOnlinePlayers()){
-                            pl.playSound(pl.getLocation(), Sound.CLICK,1,1);
-                            if(title){
-                                Utils.sendTitle(pl,"§c§l"+i,"§e§lPréparez vous !",0,22,0);
+                            if(i%10 == 0 || i%5 == 0  || i <= 10){
+                                Bukkit.broadcastMessage("§eLancement de la partie dans §6"+i+" seconde(s)§e !");
+                                boolean title = false;
+                                if(i<=5){
+                                    title = true;
+                                }
+                                for(Player pl : Bukkit.getOnlinePlayers()){
+                                    pl.playSound(pl.getLocation(), Sound.CLICK,1,1);
+                                    if(title){
+                                        Utils.sendTitle(pl,"§c§l"+i,"§e§lPréparez vous !",0,22,0);
+                                    }
+                                }
                             }
+                            i = i -1;
                         }
                     }
-                    i = i -1;
+
                 }
+
             },1,20);
         }
 
     }
 
     public static void addSpectator(UUID uniqueId) {
-        playerSpectator.add(uniqueId);
         Player p = Bukkit.getPlayer(uniqueId);
-        p.sendMessage("§cVous passez en spectateur !");
+        if (!playerSpectator.contains(uniqueId)) {
+            playerSpectator.add(uniqueId);
+            p.sendMessage("§cVous passez en spectateur !");
+        }
+        for(PotionEffect effect : p.getActivePotionEffects()){
+            p.removePotionEffect(effect.getType());
+        }
+        p.setGameMode(GameMode.SPECTATOR);
+        for(Player pl : Bukkit.getOnlinePlayers()){
+            if(!pl.getName().equalsIgnoreCase(p.getName())){
+                pl.hidePlayer(p);
+            }
+        }
+        checkIsEnd();
     }
+
+    public static void checkIsEnd(){
+        int nbr = 0;
+        Base victoryBase = null;
+        for(Base base : bases){
+            for(UUID uuid : base.getPlayersUUID()){
+                if(!playersDatas.get(uuid).isDead()){
+                    nbr = nbr +1;
+                    victoryBase = base;
+                    break;
+                }
+            }
+            if(nbr >= 2){
+                return;
+            }
+        }
+
+        for(Player p : Bukkit.getOnlinePlayers()){
+           if(victoryBase != null) {
+               if(victoryBase.getPlayersUUID().contains(p.getUniqueId())){
+                   Utils.sendTitle(p,"§6§lVICTOIRE","§6Vous avez gagné la partie !",0,20*15,0);
+               } else if (playersDatas.get(p.getUniqueId()).getBase() != null) {
+                   Utils.sendTitle(p,"§c§lDEFAITE","§a§lLes "+victoryBase.getTeamName()+"§a§l gagnent la partie !",0,20*15,0);
+               }else{
+                   Utils.sendTitle(p,"§c§lGAME OVER","§a§lLes "+victoryBase.getTeamName()+"§a§l gagnent la partie !",0,20*15,0);
+               }
+               Bukkit.broadcastMessage("§6\n§a§lLa partie est remportée par l'équipe "+victoryBase.getTeamName()+" §a§l!\n§f§o §f\n§f");
+           }else{
+               Utils.sendTitle(p,"§c§lGAME OVER","§6§légalité, personne ne gagne.",0,20*10,0);
+               Bukkit.broadcastMessage("§6\n§a§lLa partie se termine sur une égalité !\n§f§o §f\n§f");
+           }
+           Utils.clearArmor(p);
+            p.getInventory().clear();
+
+            p.playSound(p.getLocation(),Sound.ENDERDRAGON_DEATH,1000,1);
+            for(Player pl : Bukkit.getOnlinePlayers()){
+                p.showPlayer(pl);
+            }
+            p.setGameMode(GameMode.SURVIVAL);
+            p.setAllowFlight(true);
+            p.setFlying(true);
+        }
+        gameStat = GameState.Finish;
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                resetGame();
+            }
+        },20*20);
+    }
+
+    private static void resetGame() {
+        for(Player pl : Bukkit.getOnlinePlayers()){
+            pl.teleport(Main.SPAWN_LOCATION);
+        }
+        Bukkit.broadcastMessage("§c§lFin du jeu !");
+
+        for(BukkitTask bukkitTask : inRespawn.values()){
+            bukkitTask.cancel();
+        }
+        inRespawn.clear();
+        lastDamageCaused.clear();
+        for(Player p : Bukkit.getOnlinePlayers()){
+            playersDatas.put(p.getUniqueId(),new PlayerData(p.getUniqueId(),null));
+        }
+        itemSpawned.clear();
+        for(ItemGenerator itemGenerator : ItemGenerators){
+            itemGenerator.delete();
+        }
+        for(Forge forge : Forges){
+            forge.delete();
+        }
+        ItemGenerators.clear();
+        spawn = null;
+        blockBreakable.clear();
+        bases.clear();
+        locationNotPlaceable.clear();
+        Main.cooldownItemStackable.clear();
+        gameStat = GameState.Waiting;
+        deleteWorld();
+
+    }
+
+    public static void deleteWorld() {
+        Bukkit.getWorld("world").getWorldFolder().delete();
+        Bukkit.unloadWorld("bedwars",false);
+
+        Path path = Paths.get("template");
+        Path path2 = Paths.get("bedwars");
+        File file = new File(path2.toString());
+        if(file.exists()){
+            Bukkit.unloadWorld("bedwars",false);
+            Utils.deleteDirectory(file);
+        }
+        try {
+            Utils.copyDirectory(path.toString(), path2.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void protectZone(Location location, int size){
+        for(int x = -size; x <= size; x++){
+            for(int y = -size; y <= size; y++){
+                for(int z = -size; z <= size; z++){
+                    locationNotPlaceable.add(new Location(location.getWorld(),location.getBlockX()+x,location.getBlockY()+y,location.getBlockZ()+z));
+                }
+            }
+        }
+
+    }
+
+    @EventHandler
+    public void blockexplode(EntityExplodeEvent e){
+        e.setCancelled(true);
+        for(Block block : e.blockList()){
+            if(blockBreakable.contains(new Location(block.getWorld(),block.getX(),block.getY(),block.getZ()))){
+                if(Utils.random_number(0,2) == 0){
+                    block.breakNaturally(new ItemStack(Material.DIAMOND_PICKAXE));
+                    blockBreakable.remove(new Location(block.getWorld(),block.getX(),block.getY(),block.getZ()));
+                }
+            }
+        }
+
+    }
+
 }

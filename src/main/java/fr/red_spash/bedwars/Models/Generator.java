@@ -15,4 +15,6 @@ public abstract class Generator {
     public void addSpawnedItem(int amount){
         itemSpawned = itemSpawned + amount;
     }
+
+
 }

@@ -6,10 +6,7 @@ import fr.red_spash.bedwars.Models.Base;
 import fr.red_spash.bedwars.Models.DamageCaused;
 import fr.red_spash.bedwars.utils.GameState;
 import fr.red_spash.bedwars.utils.Utils;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.libs.jline.internal.Nullable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,7 +15,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.Bed;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
@@ -35,10 +31,12 @@ public class PlayerDeathEvent implements Listener {
     @EventHandler
     public void PlayerMoveEvent(PlayerMoveEvent e){
         if(e.getTo().getBlock() != e.getFrom().getBlock()){
-            Location from = e.getFrom();
-            Location to = e.getTo();
             Player p = e.getPlayer();
-
+            if(BedWarsGame.inRespawn.containsKey(p.getUniqueId()) || BedWarsGame.playerSpectator.contains(p.getUniqueId())){
+                if(p.getGameMode() != GameMode.CREATIVE){
+                    return;
+                }
+            }
             if(e.getFrom().getY()<=0){
                 if(p.getWorld().getName().equalsIgnoreCase("bedwars")){
                     DamageCaused damageCaused = new DamageCaused(null,-1);
@@ -59,11 +57,21 @@ public class PlayerDeathEvent implements Listener {
     @EventHandler
     public void DamageEvent(EntityDamageEvent e){
         if(e.getEntity() instanceof Player){
+            if(e.getCause() == EntityDamageEvent.DamageCause.LIGHTNING){
+                e.setCancelled(true);
+                return;
+            }
             if(BedWarsGame.gameStat != GameState.Started){
                 e.setCancelled(true);
                 return;
             }
             Player p = (Player) e.getEntity();
+            if(BedWarsGame.inRespawn.containsKey(p.getUniqueId()) || BedWarsGame.playerSpectator.contains(p.getUniqueId())){
+                if(p.getGameMode() != GameMode.CREATIVE){
+                    e.setCancelled(true);
+                    return;
+                }
+            }
             if(p.getHealth() <= e.getFinalDamage()){
                 e.setCancelled(true);
                 DamageCaused damageCaused = new DamageCaused(null,-1);
@@ -130,15 +138,27 @@ public class PlayerDeathEvent implements Listener {
         }
     }
 
-    private void playerDead(Player p, String deathMessage,@Nullable Player Killer) {
-        Base base = BedWarsGame.playerBase.get(p.getUniqueId());
+    public static void playerDead(Player p, String deathMessage,@Nullable Player Killer) {
+        if(BedWarsGame.inRespawn.containsKey(p.getUniqueId())){
+            BedWarsGame.inRespawn.get(p.getUniqueId()).cancel();
+        }
+        Base base = BedWarsGame.playersDatas.get(p.getUniqueId()).getBase();
+        String finalKill = "§b§lFINAL KILL";
+        if(base.asBed()){
+            finalKill = "";
+        }
         p.getLocation().getWorld().playSound(p.getLocation(), Sound.HURT_FLESH,1,1);
         deathMessage = deathMessage.replace("{DEAD}", Utils.getChatColorOf(base.getColor())+p.getName()+"§e");
         if(Killer != null){
-            Base basedamager = BedWarsGame.playerBase.get(Killer.getUniqueId());
+            Base basedamager = BedWarsGame.playersDatas.get(Killer.getUniqueId()).getBase();
             deathMessage = deathMessage.replace("{DAMAGER}",Utils.getChatColorOf(basedamager.getColor())+Killer.getName()+"§e");
+            Player damager = Bukkit.getPlayer(Killer.getUniqueId());
+            if(damager.isOnline()){
+                damager.playSound(damager.getLocation(), Sound.ORB_PICKUP,1,2);
+            }
+
         }
-        Bukkit.broadcastMessage(deathMessage);
+        Bukkit.broadcastMessage(deathMessage+" "+finalKill);
 
         if(Killer != null){
             HashMap<ItemStack,Integer> Amount = new HashMap<>();
@@ -162,6 +182,14 @@ public class PlayerDeathEvent implements Listener {
 
         }
         BedWarsGame.lastDamageCaused.remove(p.getUniqueId());
+        if(!base.asBed()){
+            BedWarsGame.playersDatas.get(p.getUniqueId()).setDead(true);
+            BedWarsGame.addSpectator(p.getUniqueId());
+            Utils.sendTitle(p,"§c§lVous n'avez plus de lit !","§cVous ne pouvez plus réapparaitre",0,20*5,20);
+            p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,5*20,10,false,false));
+            p.playSound(p.getLocation(), Sound.WITHER_SPAWN,1,0);
+            return;
+        }
         p.teleport(BedWarsGame.spawn);
         p.setAllowFlight(true);
         for(Player pl : BedWarsGame.world.getPlayers()){
@@ -170,13 +198,15 @@ public class PlayerDeathEvent implements Listener {
             }
         }
         p.setFireTicks(0);
-        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY,1000*20,1,false,false),true);
         p.setFlying(true);
         p.getInventory().clear();
+        Utils.clearArmor(p);
         p.setHealth(20.0);
         for(PotionEffect effect : p.getActivePotionEffects()){
             p.removePotionEffect(effect.getType());
         }
+        p.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY,1000*20,1,false,false),true);
+
         BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
             int i = base.getRespawnTime();
             @Override
@@ -184,6 +214,7 @@ public class PlayerDeathEvent implements Listener {
                 if(i == 0){
                     p.setFireTicks(0);
                     BedWarsGame.inRespawn.get(p.getUniqueId()).cancel();
+                    BedWarsGame.inRespawn.remove(p.getUniqueId());
                     p.setFallDistance(0);
                     p.teleport(base.getSpawnLocation());
                     for(Player pl : BedWarsGame.world.getPlayers()){
@@ -194,7 +225,10 @@ public class PlayerDeathEvent implements Listener {
                     p.setAllowFlight(false);
                     p.setFlying(false);
                     p.removePotionEffect(PotionEffectType.INVISIBILITY);
-                    base.setDefaultInventory(p);
+                    BedWarsGame.playersDatas.get(p.getUniqueId()).downdradeTools();
+                    if(p.isOnline()){
+                        BedWarsGame.playersDatas.get(p.getUniqueId()).setDefaultInventory();
+                    }
                     return;
                 }
                 Utils.sendTitle(p,"§c§lVous êtes mort !","§eRespawn dans "+i+" secondes",0,22,0);

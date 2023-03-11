@@ -19,6 +19,7 @@ public abstract class ItemShop {
     private boolean special = false;
     private boolean onlyOne = false;
     private int maxItemInInventory = -1;
+    private boolean giveable = true;
 
 
     public ItemShop(ItemStack itemStack,String name, String desription, Prix prix){
@@ -33,8 +34,16 @@ public abstract class ItemShop {
         this.informations = informations;
     }
 
+
+
+    public ItemShop setGiveable(boolean giveable) {
+        this.giveable = giveable;
+        return this;
+    }
+
     public ItemShop setMaxItemInInventory(int maxItemInInventory) {
         this.maxItemInInventory = maxItemInInventory;
+        this.onlyOne = true;
         return this;
     }
 
@@ -126,6 +135,9 @@ public abstract class ItemShop {
     }
 
     public ItemStack givableItemStack() {
+        if(!this.giveable){
+            return new ItemStack(Material.AIR);
+        }
         if(special){
             ItemStack itemStack = this.itemStack.clone();
             ItemMeta itemMeta = itemStack.getItemMeta();

@@ -1,16 +1,11 @@
 package fr.red_spash.bedwars.listeners;
 
 import fr.red_spash.bedwars.Items.Items;
-import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.Models.Base;
 import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
 import fr.red_spash.bedwars.Models.Generator;
 import fr.red_spash.bedwars.utils.Utils;
-import org.apache.logging.log4j.core.util.UuidUtil;
-import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -25,7 +20,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.material.Bed;
 import org.bukkit.material.Wool;
 
 import java.util.ArrayList;
@@ -50,6 +44,7 @@ public class InventoryListener implements Listener {
                             if(base.getColor() == dyeColor){
                                 if(base.getPlayersUUID().size() < BedWarsGame.TEAM_SIZE){
                                     base.addPlayer(p.getUniqueId());
+                                    BedWarsGame.playersDatas.get(p.getUniqueId()).setBase(base);
                                     break;
                                 }else{
                                     p.sendMessage("§cIl n'y a plus de place dans l'équipe !");
@@ -91,7 +86,13 @@ public class InventoryListener implements Listener {
     }
 
     private Inventory openTeamMenu() {
-        Inventory inv = Bukkit.createInventory(null,9*2,ITEM_TEAM_NAME);
+        double taille = BedWarsGame.bases.size()/9.0;
+        int size = 9;
+        if(taille > 9){
+            size = 9*2;
+        }
+
+        Inventory inv = Bukkit.createInventory(null,size,ITEM_TEAM_NAME);
         int i = 0;
         for(Base base : BedWarsGame.bases){
             Wool wool = new Wool(base.getColor());
@@ -126,10 +127,18 @@ public class InventoryListener implements Listener {
     public void ItemPickup(PlayerPickupItemEvent e){
         Item item = e.getItem();
         UUID uuid = item.getUniqueId();
+        Player p = e.getPlayer();
+        if(BedWarsGame.inRespawn.containsKey(p.getUniqueId()) || BedWarsGame.playerSpectator.contains(p.getUniqueId())){
+            if(p.getGameMode() != GameMode.CREATIVE){
+                e.setCancelled(true);
+                return;
+            }
+        }
         if(BedWarsGame.itemSpawned.containsKey(uuid)){
             Generator generator = BedWarsGame.itemSpawned.get(uuid);
             generator.itemPickup(item.getItemStack().getAmount());
             BedWarsGame.itemSpawned.remove(uuid);
+
         }
     }
 

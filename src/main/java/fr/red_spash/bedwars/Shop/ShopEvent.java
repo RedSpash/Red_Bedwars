@@ -1,12 +1,10 @@
 package fr.red_spash.bedwars.Shop;
 
+import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
 import fr.red_spash.bedwars.Shop.Applications.ItemShop;
 import fr.red_spash.bedwars.Shop.Applications.UpgradableItem;
 import fr.red_spash.bedwars.utils.Utils;
-import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Villager;
@@ -33,11 +31,18 @@ public class ShopEvent implements Listener {
     @EventHandler
     public void InteractVillager(PlayerInteractEntityEvent e){
         if(e.getRightClicked() instanceof Villager){
+            Player p = e.getPlayer();
+            if(BedWarsGame.inRespawn.containsKey(p.getUniqueId()) || BedWarsGame.playerSpectator.contains(p.getUniqueId())){
+                if(p.getGameMode() != GameMode.CREATIVE){
+                    e.setCancelled(true);
+                    return;
+                }
+            }
             Villager villager = (Villager) e.getRightClicked();
             if(villager.getCustomName() != null){
                 if(villager.getCustomName().equalsIgnoreCase("§6§lItems")){
                     e.setCancelled(true);
-                    openShopInventory(e.getPlayer(),ItemCategorie.BLOCS);
+                    openShopInventory(p,ItemCategorie.BLOCS);
                 }
             }
         }
@@ -64,12 +69,16 @@ public class ShopEvent implements Listener {
                                     }else if(e.getSlot() >= 19) {
                                         //SHOP
                                         ItemShop findedShop = null;
+                                        if(p.getInventory().firstEmpty() == -1){
+                                            p.sendMessage("§cVous n'avez plus de place dans l'inventaire !");
+                                            p.playSound(p.getLocation(), Sound.VILLAGER_NO,1,1);
+                                            return;
+                                        }
                                         for (ItemShop shop : Shop.itemShop.get(playerCategorie.get(p.getUniqueId()))) {
                                             if(shop instanceof UpgradableItem){
                                                 UpgradableItem upgradableItem = (UpgradableItem) shop;
 
                                                 while(upgradableItem.getUpgrade() != null && !upgradableItem.getItemStack().isSimilar(item)){
-                                                    Bukkit.broadcastMessage(upgradableItem.getItemStack().getType()+"");
                                                     upgradableItem = upgradableItem.getUpgrade();
                                                 }
                                                 if(upgradableItem.getItemStack().isSimilar(item)){
@@ -86,11 +95,27 @@ public class ShopEvent implements Listener {
                                                 return;
                                             }
                                             if (findedShop.getPrix().canBuy(p)) {
+                                                if(findedShop.getMaxItemInInventory() != -1){
+                                                    int amount = 0;
+                                                    for(ItemStack itemStack : p.getInventory()){
+                                                        if(itemStack != null){
+                                                            if(itemStack.getType() == findedShop.getItemStack().getType()){
+                                                                amount = amount + itemStack.getAmount();
+                                                            }
+                                                        }
+                                                    }
+                                                    if(findedShop.getMaxItemInInventory() <= amount){
+                                                        p.sendMessage("§cVous ne pouvez pas avoir plus de "+findedShop.getMaxItemInInventory()+" "+findedShop.getName()+"§c dans l'inventaire !");
+                                                        p.playSound(p.getLocation(), Sound.VILLAGER_NO,1,1);
+                                                        return;
+                                                    }
+                                                }
+
                                                 findedShop.getPrix().buy(p);
                                                 p.playSound(p.getLocation(), Sound.ORB_PICKUP, 2, 1);
                                                 if(findedShop instanceof UpgradableItem){
                                                     UpgradableItem upgradableItem = (UpgradableItem) findedShop;
-                                                    upgradableItem.getMain().addOneLevel(p);
+                                                    upgradableItem.getMain().addOneLevel(p.getUniqueId());
                                                     openShopInventory(p,playerCategorie.get(p.getUniqueId()));
                                                 }
                                                 if(findedShop.getOnlyOne()){
@@ -125,6 +150,23 @@ public class ShopEvent implements Listener {
                                                     }
                                                 }else{
                                                     p.getInventory().addItem(findedShop.givableItemStack());
+                                                }
+                                                if(!findedShop.getItemStack().getType().isBlock()){
+                                                    if(findedShop instanceof UpgradableItem){
+                                                        UpgradableItem upgradableItem = (UpgradableItem) findedShop;
+                                                        if(upgradableItem.getItemStack().getType().toString().contains("_PICKAXE")){
+                                                            BedWarsGame.playersDatas.get(p.getUniqueId()).setPickaxe(upgradableItem);
+                                                        }else if(upgradableItem.getItemStack().getType().toString().contains("_AXE")){
+                                                            BedWarsGame.playersDatas.get(p.getUniqueId()).setAxe(upgradableItem);
+                                                        }
+                                                    }else{
+                                                        if(findedShop.getItemStack().getType().toString().contains("SHEARS")){
+                                                            BedWarsGame.playersDatas.get(p.getUniqueId()).setSheart(true);
+                                                        }if(findedShop.getName().contains("armure")){
+                                                            BedWarsGame.playersDatas.get(p.getUniqueId()).setArmor(findedShop);
+                                                            BedWarsGame.playersDatas.get(p.getUniqueId()).updateArmor();
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }

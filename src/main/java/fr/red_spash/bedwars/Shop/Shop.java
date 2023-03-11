@@ -16,6 +16,8 @@ import java.util.*;
 
 public class Shop {
 
+    public static UpgradableItem DEFAULT_AXE;
+    public static UpgradableItem DEFAULT_PICKAXE;
     public static LinkedHashMap<ItemCategorie, LinkedList<ItemShop>> itemShop = new LinkedHashMap<>();
 
     public static void initShopsCategories(){
@@ -53,14 +55,14 @@ public class Shop {
         potionMeta.setMainEffect(PotionEffectType.SPEED);
         potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.SPEED,20*45,1,true),true);
         itemStack.setItemMeta(potionMeta);
-        items.add(new BasicItem(itemStack,"Potion - Speed II (45 secs)","Augmente votre vitesse de déplacement.",new Prix(Material.EMERALD,1)));
+        items.add(new BasicItem(itemStack,"Potion - Speed II (45 secs)","Augmente votre vitesse de déplacement.",new Prix(Material.EMERALD,1)).setSpecial());
 
         itemStack = new ItemStack(Material.POTION);
         potionMeta = (PotionMeta) itemStack.getItemMeta();
         potionMeta.setMainEffect(PotionEffectType.JUMP);
         potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.JUMP,20*45,4,true,true),true);
         itemStack.setItemMeta(potionMeta);
-        items.add(new BasicItem(itemStack,"Potion - Jump Boost V (45 secs)","Augmente votre capacité à sauter.",new Prix(Material.EMERALD,1)));
+        items.add(new BasicItem(itemStack,"Potion - Jump Boost V (45 secs)","Augmente votre capacité à sauter.",new Prix(Material.EMERALD,1)).setSpecial());
 
         itemStack = new ItemStack(Material.POTION);
         potionMeta = (PotionMeta) itemStack.getItemMeta();
@@ -68,7 +70,7 @@ public class Shop {
         potionMeta.setMainEffect(PotionEffectType.INVISIBILITY);
         potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.INVISIBILITY,20*30,0,true),true);
         itemStack.setItemMeta(potionMeta);
-        items.add(new BasicItem(itemStack,"Potion - Invisibilité (30 secs)","Vous rends invisible.",new Prix(Material.EMERALD,2)));
+        items.add(new BasicItem(itemStack,"Potion - Invisibilité (30 secs)","Vous rends invisible.",new Prix(Material.EMERALD,2)).setSpecial());
 
 
         itemShop.put(ItemCategorie.POTIONS,items);
@@ -99,31 +101,32 @@ public class Shop {
     private static void initShopsOutils(){
         LinkedList<ItemShop> items = new LinkedList<>();
         ArrayList<String> pioche_desc = new ArrayList<>(Arrays.asList("§7Cet item est améliorable.","§7A chaque mort le niveau","§7de la pioche diminue de 1.","§7Vous ne pouvez pas descendre","en dessous de 1!"));
+        DEFAULT_PICKAXE =  new UpgradableItem(Utils.makeUnbreakable(new ItemStack(Material.WOOD_PICKAXE)),"Pioche en bois","",pioche_desc,new Prix(Material.IRON_INGOT,10));
         items.add(
-                new UpgradableItem(Utils.makeUnbreakable(new ItemStack(Material.WOOD_PICKAXE)),"Pioche en bois","§f",pioche_desc,new Prix(Material.IRON_INGOT,10)).setNextUpgradeItemShop(
-                        new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.IRON_PICKAXE,Enchantment.DIG_SPEED,2)),"Améliore votre pioche","§f",pioche_desc,new Prix(Material.IRON_INGOT,10)).setNextUpgradeItemShop(
-                                new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.GOLD_PICKAXE,Enchantment.DIG_SPEED,3)),"Améliore votre pioche","§f",pioche_desc,new Prix(Material.GOLD_INGOT,3)).setNextUpgradeItemShop(
-                                        new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.DIAMOND_PICKAXE,Enchantment.DIG_SPEED,3)),"Améliore votre pioche","§f",pioche_desc,new Prix(Material.GOLD_INGOT,6)))))
+               DEFAULT_PICKAXE.setNextUpgradeItemShop(
+                        new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.IRON_PICKAXE,Enchantment.DIG_SPEED,2)),"Améliore votre pioche","",pioche_desc,new Prix(Material.IRON_INGOT,10)).setNextUpgradeItemShop(
+                                new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.GOLD_PICKAXE,Enchantment.DIG_SPEED,3)),"Améliore votre pioche","",pioche_desc,new Prix(Material.GOLD_INGOT,3)).setNextUpgradeItemShop(
+                                        new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.DIAMOND_PICKAXE,Enchantment.DIG_SPEED,3)),"Améliore votre pioche","",pioche_desc,new Prix(Material.GOLD_INGOT,6)))))
         );
 
         ArrayList<String> axe_desc = new ArrayList<>(Arrays.asList("§7Cet item est améliorable.","§7A chaque mort le niveau","§7de la pioche diminue de 1.","§7Vous ne pouvez pas descendre","en dessous de 1!"));
-
+        DEFAULT_AXE = new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.WOOD_AXE,Enchantment.DIG_SPEED,1)),"Hache en bois","",axe_desc,new Prix(Material.IRON_INGOT,10));
         items.add(
-                new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.WOOD_AXE,Enchantment.DIG_SPEED,1)),"Hache en bois","§f",axe_desc,new Prix(Material.IRON_INGOT,10)).setNextUpgradeItemShop(
-                        new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.IRON_AXE,Enchantment.DIG_SPEED,2)),"Améliore votre hache","§f",axe_desc,new Prix(Material.IRON_INGOT,10)).setNextUpgradeItemShop(
-                                new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.GOLD_AXE,Enchantment.DIG_SPEED,2)),"Améliore votre hache","§f",axe_desc,new Prix(Material.GOLD_INGOT,3)).setNextUpgradeItemShop(
-                                        new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.DIAMOND_AXE,Enchantment.DIG_SPEED,3)),"Améliore votre hache","§f",axe_desc,new Prix(Material.GOLD_INGOT,6)))))
+                DEFAULT_AXE.setNextUpgradeItemShop(
+                        new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.IRON_AXE,Enchantment.DIG_SPEED,2)),"Améliore votre hache","",axe_desc,new Prix(Material.IRON_INGOT,10)).setNextUpgradeItemShop(
+                                new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.GOLD_AXE,Enchantment.DIG_SPEED,2)),"Améliore votre hache","",axe_desc,new Prix(Material.GOLD_INGOT,3)).setNextUpgradeItemShop(
+                                        new UpgradableItem(Utils.makeUnbreakable(Utils.materialWithEnchant(Material.DIAMOND_AXE,Enchantment.DIG_SPEED,3)),"Améliore votre hache","",axe_desc,new Prix(Material.GOLD_INGOT,6)))))
         );
 
-        items.add(new BasicItem(new ItemStack(Material.SHEARS),"Shears","Permet de casser les blocks de laine rapidements.",new Prix(Material.BEDROCK,6)).setOnlyOne(true));
+        items.add(new BasicItem(new ItemStack(Material.SHEARS),"Shears","Permet de casser les blocks de laine rapidements.",new Prix(Material.IRON_INGOT,20)).setMaxItemInInventory(1));
         itemShop.put(ItemCategorie.OUTILS,items);
     }
 
     private static void initShopsArmors(){
         LinkedList<ItemShop> items = new LinkedList<>();
-        items.add(new BasicItem(new ItemStack(Material.CHAINMAIL_CHESTPLATE),"Armure en maille","Une armure de faible protection.",new ArrayList<>(Arrays.asList("§eContient: ","  §7- Bottes en maille","  §7- Leggings en maille")),new Prix(Material.IRON_INGOT,50)));
-        items.add(new BasicItem(new ItemStack(Material.IRON_CHESTPLATE),"Armure en fer","Une armure moyenne permettant de bon combat.",new ArrayList<>(Arrays.asList("§eContient: ","  §7- Bottes en fer","  §7- Leggings en fer")),new Prix(Material.GOLD_INGOT,12)));
-        items.add(new BasicItem(new ItemStack(Material.DIAMOND_CHESTPLATE),"Armure en diamant","La meilleur protection pour les armures.",new ArrayList<>(Arrays.asList("§eContient: ","  §7- Bottes en diamant","  §7- Leggings en diamant")),new Prix(Material.EMERALD,6)));
+        items.add(new BasicItem(new ItemStack(Material.CHAINMAIL_CHESTPLATE),"Armure en maille","Une armure de faible protection.",new ArrayList<>(Arrays.asList("§eContient: ","  §7- Bottes en maille","  §7- Leggings en maille")),new Prix(Material.IRON_INGOT,50)).setGiveable(false));
+        items.add(new BasicItem(new ItemStack(Material.IRON_CHESTPLATE),"Armure en fer","Une armure moyenne permettant de bon combat.",new ArrayList<>(Arrays.asList("§eContient: ","  §7- Bottes en fer","  §7- Leggings en fer")),new Prix(Material.GOLD_INGOT,12)).setGiveable(false));
+        items.add(new BasicItem(new ItemStack(Material.DIAMOND_CHESTPLATE),"Armure en diamant","La meilleur protection pour les armures.",new ArrayList<>(Arrays.asList("§eContient: ","  §7- Bottes en diamant","  §7- Leggings en diamant")),new Prix(Material.EMERALD,6)).setGiveable(false));
         itemShop.put(ItemCategorie.ARMURES,items);
     }
 
@@ -141,9 +144,9 @@ public class Shop {
 
     private static void initShopsArmes() {
         LinkedList<ItemShop> items = new LinkedList<>();
-        items.add(new BasicItem(new ItemStack(Material.STONE_SWORD),"Epee en pierre","Une épée simple.",new Prix(Material.IRON_INGOT,10)).setOnlyOne(true));
-        items.add(new BasicItem(new ItemStack(Material.IRON_SWORD),"Epee en fer","Une épée puissante à faible coût.",new Prix(Material.GOLD_INGOT,7)).setOnlyOne(true));
-        items.add(new BasicItem(new ItemStack(Material.DIAMOND_SWORD),"Epee en diamant","La meilleur des épées !",new Prix(Material.EMERALD,4)).setOnlyOne(true));
+        items.add(new BasicItem(Utils.makeUnbreakable(new ItemStack(Material.STONE_SWORD)),"Epee en pierre","Une épée simple.",new Prix(Material.IRON_INGOT,10)).setOnlyOne(true));
+        items.add(new BasicItem(Utils.makeUnbreakable(new ItemStack(Material.IRON_SWORD)),"Epee en fer","Une épée puissante à faible coût.",new Prix(Material.GOLD_INGOT,7)).setOnlyOne(true));
+        items.add(new BasicItem(Utils.makeUnbreakable(new ItemStack(Material.DIAMOND_SWORD)),"Epee en diamant","La meilleur des épées !",new Prix(Material.EMERALD,4)).setOnlyOne(true));
         ItemStack stick = new ItemStack(Material.STICK);
         ItemMeta itemMeta = stick.getItemMeta();
         itemMeta.addEnchant(Enchantment.KNOCKBACK,2,true);

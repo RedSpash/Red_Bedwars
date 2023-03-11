@@ -31,25 +31,26 @@ public class testcommande implements CommandExecutor {
         if(strings.length == 1){
             if(commandSender instanceof Player){
                 Player p = (Player) commandSender;
-                if(strings[0].equalsIgnoreCase("base")){
-                    ArrayList<Base> base = (ArrayList<Base>) BedWarsGame.bases.clone();
-                    Base temp = base.get(Utils.random_number(0,base.size()-1));
-                    while(temp.isFull() && base.size() > 1){
-                        base.remove(temp);
-                        temp = base.get(Utils.random_number(0,base.size()-1));
+                switch (strings[0].toLowerCase()){
+                    case "shop" :{
+                        ShopEvent.openShopInventory(p, ItemCategorie.BLOCS);
+                        break;
                     }
-                    if(temp.isFull()){
-                        BedWarsGame.addSpectator(p.getUniqueId());
-                    }else{
-                        temp.addPlayer(p.getUniqueId());
-                        p.teleport(temp.getSpawnLocation());
-                        temp.setDefaultInventory(p);
-                        p.setGameMode(GameMode.SURVIVAL);
+                    case "armor":{
+                        BedWarsGame.playersDatas.get(p.getUniqueId()).updateArmor();
+                        break;
                     }
-                }else if(strings[0].equalsIgnoreCase("shop")){
-                    ShopEvent.openShopInventory(p, ItemCategorie.BLOCS);
-                }else{
-                    p.teleport(Bukkit.getWorld(strings[0]).getSpawnLocation());
+                    case "tool":{
+                        BedWarsGame.playersDatas.get(p.getUniqueId()).setDefaultInventory();
+                        break;
+                    }
+                    case "all":{
+                        BedWarsGame.playersDatas.get(p.getUniqueId()).resetInventory();
+                        break;
+                    }
+                    default:
+                        p.teleport(Bukkit.getWorld(strings[0]).getSpawnLocation());
+                        break;
                 }
             }
             return true;

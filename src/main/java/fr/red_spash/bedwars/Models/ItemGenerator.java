@@ -53,6 +53,8 @@ public class ItemGenerator extends Generator {
         this.armorStandTime.setCustomName("§cEn attente du lancement de la partie...");
         this.armorStandTime.setHelmet(new ItemStack(this.displayItem));
 
+        BedWarsGame.protectZone(this.location,2);
+
     }
 
     public void setTier(int tier) {
@@ -75,7 +77,7 @@ public class ItemGenerator extends Generator {
 
     public void startSpawn(){
         ItemGenerator itemGenerator = this;
-        Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
+        this.bukkitTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
             @Override
             public void run() {
                 itemGenerator.removeTimeNextItem(1);
@@ -113,4 +115,10 @@ public class ItemGenerator extends Generator {
         armorStand.setCustomName("§eProchain item dans §c"+Utils.twoCaractere(((int)this.nextItem))+" sec§e.");
         //armorStand.setHeadPose(armorStand.getHeadPose().add(0,0.5,0));
     }
+
+    public void delete() {
+        this.bukkitTask.cancel();
+    }
+
+
 }

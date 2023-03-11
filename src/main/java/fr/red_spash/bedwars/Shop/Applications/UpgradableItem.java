@@ -62,20 +62,20 @@ public class UpgradableItem extends ItemShop {
         return toReturnItemShop;
     }
 
-    public void addOneLevel(Player p){
-        if(!playerLevel.containsKey(p.getUniqueId())){
-            playerLevel.put(p.getUniqueId(),1);
+    public void addOneLevel(UUID uuid){
+        if(!playerLevel.containsKey(uuid)){
+            playerLevel.put(uuid,1);
         }else{
-            playerLevel.put(p.getUniqueId(),playerLevel.get(p.getUniqueId())+1);
+            playerLevel.put(uuid,playerLevel.get(uuid)+1);
         }
     }
 
-    public void addRemoveOneLevel(Player p){
-        if(!playerLevel.containsKey(p.getUniqueId())){
-            playerLevel.put(p.getUniqueId(),0);
+    public void addRemoveOneLevel(UUID uuid){
+        if(!playerLevel.containsKey(uuid)){
+            playerLevel.put(uuid,0);
         }else{
-            if(playerLevel.get(p.getUniqueId()) != 0){
-                playerLevel.put(p.getUniqueId(),playerLevel.get(p.getUniqueId())-1);
+            if(playerLevel.get(uuid) != 0){
+                playerLevel.put(uuid,playerLevel.get(uuid)-1);
             }
         }
     }

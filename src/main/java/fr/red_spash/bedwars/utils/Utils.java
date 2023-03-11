@@ -75,7 +75,7 @@ public class Utils {
         if (DyeColor.RED.equals(color)) {
             return "§c";
         }else if (DyeColor.CYAN.equals(color)) {
-            return "§b";
+            return "§3";
         }else if (DyeColor.BLUE.equals(color)) {
             return "§9";
         }else if (DyeColor.PINK.equals(color)) {
@@ -86,10 +86,10 @@ public class Utils {
             return "§6";
         }else if (DyeColor.LIME.equals(color)) {
             return "§a";
-        }else if (DyeColor.PURPLE.equals(color)) {
+        }else if (DyeColor.MAGENTA.equals(color)) {
             return "§5";
-        }else if (DyeColor.WHITE.equals(color)) {
-            return "§f";
+        }else if (DyeColor.LIGHT_BLUE.equals(color)) {
+            return "§b";
         }else if (DyeColor.YELLOW.equals(color)) {
             return "§e";
         }else if (DyeColor.GREEN.equals(color)) {
@@ -103,7 +103,7 @@ public class Utils {
         if (DyeColor.RED.equals(color)) {
             return "ROUGE";
         }else if (DyeColor.CYAN.equals(color)) {
-            return "AQUA";
+            return "CYAN";
         }else if (DyeColor.BLUE.equals(color)) {
             return "BLEU";
         }else if (DyeColor.PINK.equals(color)) {
@@ -114,10 +114,10 @@ public class Utils {
             return "ORANGE";
         }else if (DyeColor.LIME.equals(color)) {
             return "VERT CLAIR";
-        }else if (DyeColor.PURPLE.equals(color)) {
-            return "VIOLET";
-        }else if (DyeColor.WHITE.equals(color)) {
-            return "BLANC";
+        }else if (DyeColor.MAGENTA.equals(color)) {
+            return "MAGENTA";
+        }else if (DyeColor.LIGHT_BLUE.equals(color)) {
+            return "AQUA";
         }else if (DyeColor.YELLOW.equals(color)) {
             return "JAUNE";
         }else if (DyeColor.GREEN.equals(color)) {
@@ -137,26 +137,35 @@ public class Utils {
         handle.b(data);
     }
 
-
-    public static ItemStack getArmorColor(Material leatherHelmet,DyeColor color) {
-        ItemStack item = new ItemStack(leatherHelmet);
-        if(leatherHelmet == Material.LEATHER_HELMET ||
-                leatherHelmet == Material.LEATHER_BOOTS ||
-                leatherHelmet == Material.LEATHER_CHESTPLATE ||
-                leatherHelmet == Material.LEATHER_LEGGINGS){
+    public static ItemStack getArmorColor(Material material,DyeColor color, Enchantment enchantment, Integer niveau){
+        ItemStack item = new ItemStack(material);
+        if(material == Material.LEATHER_HELMET ||
+                material == Material.LEATHER_BOOTS ||
+                material == Material.LEATHER_CHESTPLATE ||
+                material == Material.LEATHER_LEGGINGS){
             LeatherArmorMeta lam = (LeatherArmorMeta) item.getItemMeta();
             lam.setColor(Utils.getColor(color));
+
+            if(enchantment != null && niveau != 0){
+                lam.addEnchant(enchantment,niveau,true);
+            }
+
             item.setItemMeta(lam);
         }
 
-        return item;
+        return Utils.makeUnbreakable(item);
+    }
+
+
+    public static ItemStack getArmorColor(Material material,DyeColor color) {
+        return getArmorColor(material,color,null,0);
     }
 
     private static Color getColor(DyeColor color) {
         if (DyeColor.RED.equals(color)) {
             return Color.RED;
         }else if (DyeColor.CYAN.equals(color)) {
-            return Color.fromRGB(0,255,255);
+            return Color.fromRGB(0,139,139);
         }else if (DyeColor.BLUE.equals(color)) {
             return Color.BLUE;
         }else if (DyeColor.PINK.equals(color)) {
@@ -167,10 +176,10 @@ public class Utils {
             return Color.ORANGE;
         }else if (DyeColor.LIME.equals(color)) {
             return Color.LIME;
-        }else if (DyeColor.PURPLE.equals(color)) {
-            return Color.PURPLE;
-        }else if (DyeColor.WHITE.equals(color)) {
-            return Color.WHITE;
+        }else if (DyeColor.MAGENTA.equals(color)) {
+            return Color.fromRGB(255,0,255);
+        }else if (DyeColor.LIGHT_BLUE.equals(color)) {
+            return Color.fromRGB(0,255,255);
         }else if (DyeColor.YELLOW.equals(color)) {
             return Color.YELLOW;
         }else if (DyeColor.GREEN.equals(color)) {
@@ -190,6 +199,7 @@ public class Utils {
             }
         }
         if(directory.delete()) {
+            directory.delete();
             System.out.println(directory + " is deleted");
         }
         else {
@@ -246,6 +256,13 @@ public class Utils {
         itemMeta.spigot().setUnbreakable(true);
         itemStack.setItemMeta(itemMeta);
         return itemStack;
+    }
+
+    public static void clearArmor(Player p){
+        p.getInventory().setHelmet(null);
+        p.getInventory().setChestplate(null);
+        p.getInventory().setLeggings(null);
+        p.getInventory().setBoots(null);
     }
 
 

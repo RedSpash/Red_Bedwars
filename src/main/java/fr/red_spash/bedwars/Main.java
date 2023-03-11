@@ -2,6 +2,7 @@ package fr.red_spash.bedwars;
 
 import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
 import fr.red_spash.bedwars.Commandes.testcommande;
+import fr.red_spash.bedwars.Models.PlayerData;
 import fr.red_spash.bedwars.Scoreboard.ScoreboardManager;
 import fr.red_spash.bedwars.Shop.Shop;
 import fr.red_spash.bedwars.Shop.ShopEvent;
@@ -16,6 +17,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 
 public class Main extends JavaPlugin {
@@ -31,6 +36,11 @@ public class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+
+        for(Player pl : Bukkit.getOnlinePlayers()){
+            BedWarsGame.playersDatas.put(pl.getUniqueId(),new PlayerData(pl.getUniqueId(),null));
+            Utils.sendActionText(pl,"§c§lReload terminé !");
+        }
 
         Shop.initShopsCategories();
         getCommand("test").setExecutor(new testcommande());
@@ -99,9 +109,10 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        for(Player p : BedWarsGame.world.getPlayers()){
+        for(Player p : Bukkit.getOnlinePlayers()){
             p.teleport(SPAWN_LOCATION);
         }
+        BedWarsGame.deleteWorld();
     }
 
 }

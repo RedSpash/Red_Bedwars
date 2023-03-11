@@ -2,9 +2,11 @@ package fr.red_spash.bedwars.listeners;
 
 import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
+import fr.red_spash.bedwars.Models.PlayerData;
 import fr.red_spash.bedwars.Scoreboard.ScoreboardManager;
 import fr.red_spash.bedwars.utils.GameState;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -20,6 +22,12 @@ public class SpawnListener implements Listener {
     public void EntityInteract(PlayerInteractEntityEvent e){
         Player p = e.getPlayer();
         Entity entity = e.getRightClicked();
+        if(BedWarsGame.inRespawn.containsKey(p.getUniqueId()) || BedWarsGame.playerSpectator.contains(p.getUniqueId())){
+            if(p.getGameMode() != GameMode.CREATIVE){
+                e.setCancelled(true);
+                return;
+            }
+        }
         if(entity instanceof Villager){
             Villager villager = (Villager) entity;
             if(villager.getCustomName() != null){
@@ -48,6 +56,18 @@ public class SpawnListener implements Listener {
             e.getPlayer().teleport(BedWarsGame.spawn);
             BedWarsGame.checkCanStart();
             ScoreboardManager.setScoreboard(e.getPlayer());
+        }
+        Player p = e.getPlayer();
+
+        if(!BedWarsGame.playersDatas.containsKey(p.getUniqueId())){
+            BedWarsGame.playersDatas.put(p.getUniqueId(),new PlayerData(p.getUniqueId(),null));
+        }
+
+        if(BedWarsGame.playersDatas.get(p.getUniqueId()).getBase() != null){
+            PlayerDeathEvent.playerDead(p,"{DEAD} vient de se reconnecter !",null);
+        }else{
+            Bukkit.broadcastMessage("§7"+p.getName()+" rejoint la partie en spectateur !");
+            BedWarsGame.addSpectator(p.getUniqueId());
         }
     }
 

@@ -15,6 +15,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.material.Bed;
 
 public class SpawnListener implements Listener {
 
@@ -63,11 +64,13 @@ public class SpawnListener implements Listener {
             BedWarsGame.playersDatas.put(p.getUniqueId(),new PlayerData(p.getUniqueId(),null));
         }
 
-        if(BedWarsGame.playersDatas.get(p.getUniqueId()).getBase() != null){
-            PlayerDeathEvent.playerDead(p,"{DEAD} vient de se reconnecter !",null);
-        }else{
-            Bukkit.broadcastMessage("§7"+p.getName()+" rejoint la partie en spectateur !");
-            BedWarsGame.addSpectator(p.getUniqueId());
+        if(BedWarsGame.gameStat == GameState.Started){
+            if(BedWarsGame.playersDatas.get(p.getUniqueId()).getBase() != null){
+                PlayerDeathEvent.playerDead(p,"{DEAD} vient de se reconnecter !",null);
+            }else{
+                Bukkit.broadcastMessage("§7"+p.getName()+" rejoint la partie en spectateur !");
+                BedWarsGame.addSpectator(p.getUniqueId());
+            }
         }
     }
 

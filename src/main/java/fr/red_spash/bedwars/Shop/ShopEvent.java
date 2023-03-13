@@ -1,6 +1,7 @@
 package fr.red_spash.bedwars.Shop;
 
 import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
+import fr.red_spash.bedwars.Models.Base;
 import fr.red_spash.bedwars.Shop.Applications.ItemShop;
 import fr.red_spash.bedwars.Shop.Applications.UpgradableItem;
 import fr.red_spash.bedwars.utils.Utils;
@@ -17,6 +18,7 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.material.Wool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -149,7 +151,15 @@ public class ShopEvent implements Listener {
                                                         p.getInventory().setItem(position,findedShop.givableItemStack());
                                                     }
                                                 }else{
-                                                    p.getInventory().addItem(findedShop.givableItemStack());
+                                                    if(findedShop.getItemStack().getType() == Material.WOOL){
+                                                        Base base = BedWarsGame.playersDatas.get(p.getUniqueId()).getBase();
+                                                        Wool wool = new Wool(base.getColor());
+                                                        ItemStack colored = wool.toItemStack();
+                                                        colored.setAmount(findedShop.getItemStack().getAmount());
+                                                        p.getInventory().addItem(colored);
+                                                    }else{
+                                                        p.getInventory().addItem(findedShop.givableItemStack());
+                                                    }
                                                 }
                                                 if(!findedShop.getItemStack().getType().isBlock()){
                                                     if(findedShop instanceof UpgradableItem){
@@ -162,12 +172,25 @@ public class ShopEvent implements Listener {
                                                     }else{
                                                         if(findedShop.getItemStack().getType().toString().contains("SHEARS")){
                                                             BedWarsGame.playersDatas.get(p.getUniqueId()).setSheart(true);
-                                                        }if(findedShop.getName().contains("armure")){
+                                                        }if(findedShop.getItemStack().getType().toString().toLowerCase().contains("_chestplate")){
                                                             BedWarsGame.playersDatas.get(p.getUniqueId()).setArmor(findedShop);
                                                             BedWarsGame.playersDatas.get(p.getUniqueId()).updateArmor();
                                                         }
                                                     }
                                                 }
+                                            }else{
+                                                int amount = 0;
+                                                for(int i =0; i< p.getInventory().getSize(); i++){
+                                                    ItemStack itemStack = p.getInventory().getItem(i);
+                                                    if(itemStack != null){
+                                                        if(findedShop.getPrix().getItemTypeNeed().equals(itemStack.getType())){
+                                                            amount = amount + itemStack.getAmount();
+                                                        }
+                                                    }
+                                                }
+                                                p.playSound(p.getLocation(), Sound.VILLAGER_NO,1,1);
+                                                String need = Utils.upperCaseFirst(findedShop.getPrix().getItemTypeNeed().toString().replace("_"," "));
+                                                p.sendMessage("§cIl vous manque "+(findedShop.getPrix().getAmount()-amount)+" "+need+" pour acheter cette item !");
                                             }
                                         }
                                     }
@@ -196,8 +219,10 @@ public class ShopEvent implements Listener {
                 itemStack.setItemMeta(itemMeta);
                 inv.setItem(i+9, Utils.removeDataCategorieGlassPane(Material.STAINED_GLASS_PANE, DyeColor.LIME));
             }
-            inv.setItem(i,itemStack);
-            i = i +1;
+            if(categorie.getEnabled()){
+                inv.setItem(i,itemStack);
+                i = i +1;
+            }
         }
 
         i = 19;
@@ -206,38 +231,28 @@ public class ShopEvent implements Listener {
                 UpgradableItem upgradableItem = (UpgradableItem) itemShop;
                 itemShop = upgradableItem.getItemShop(player);
             }
-            inv.setItem(i,itemShop.getItemStack());
-            i = i +1;
+            if(itemShop.isEnable()){
+                inv.setItem(i,itemShop.getItemStack());
+                i = i +1;
+            }
 
             if((i+1)%9 == 0){
                 i = i +2;
             }
         }
-
         player.openInventory(inv);
     }
 
     private static ItemStack getBlockCategorie(ItemCategorie itemCategorie){
-        switch (itemCategorie){
-            case BLOCS: return generateItemStackCategorie(Material.WOOL,"§aBlocs");
-            case ARCS: return generateItemStackCategorie(Material.BOW,"§aArcs");
-            case ARMES: return generateItemStackCategorie(Material.DIAMOND_SWORD,"§aArmes");
-            case AUTRES: return generateItemStackCategorie(Material.GOLDEN_APPLE,"§aAutres");
-            case OUTILS: return generateItemStackCategorie(Material.DIAMOND_PICKAXE,"§aOutils");
-            case ARMURES: return generateItemStackCategorie(Material.IRON_CHESTPLATE,"§aArmures");
-            case POTIONS: return generateItemStackCategorie(Material.BREWING_STAND_ITEM,"§aPotions");
-        }
-        return new ItemStack(Material.BARRIER);
-    }
-
-    private static ItemStack generateItemStackCategorie(Material material, String name){
-        ItemStack itemStack = new ItemStack(material);
+        ItemStack itemStack = itemCategorie.getItemStack();
         ItemMeta itemMeta = itemStack.getItemMeta();
-        itemMeta.setDisplayName(name);
+        itemMeta.setDisplayName("§a"+itemCategorie.getName());
         itemMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        itemMeta.setLore(new ArrayList<>(Arrays.asList("§f","§7Clique pour aller dans cette catégorie.","§f")));
+        itemMeta.setLore(new ArrayList<>(Arrays.asList("§7Clique pour aller dans cette catégorie.")));
         itemStack.setItemMeta(itemMeta);
         return itemStack;
     }
+
+
 
 }

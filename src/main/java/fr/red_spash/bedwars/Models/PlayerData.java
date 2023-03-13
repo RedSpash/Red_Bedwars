@@ -93,6 +93,7 @@ public class PlayerData {
 
         inv.clear();
         inv.addItem(Utils.makeUnbreakable(new ItemStack(Material.WOOD_SWORD)));
+        inv.addItem(Utils.makeUnbreakable(new ItemStack(Material.FIREBALL,64)));
 
         if(this.pickaxe != null){
             p.getInventory().addItem(this.pickaxe.givableItemStack());

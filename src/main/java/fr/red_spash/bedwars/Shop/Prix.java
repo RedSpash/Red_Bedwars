@@ -8,7 +8,7 @@ public class Prix {
 
     private int amount;
     private Material itemTypeNeed;
-    private boolean CheatMod = true;
+    private boolean CheatMod = false;
 
     public Prix(Material itemTypeNeed,int amount){
         this.amount = amount;

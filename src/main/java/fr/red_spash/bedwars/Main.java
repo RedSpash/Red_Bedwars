@@ -9,7 +9,6 @@ import fr.red_spash.bedwars.Shop.ShopEvent;
 import fr.red_spash.bedwars.Timer.UpdateTimers;
 import fr.red_spash.bedwars.listeners.*;
 import fr.red_spash.bedwars.utils.Utils;
-import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.server.v1_8_R3.MinecraftServer;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -17,10 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 
 public class Main extends JavaPlugin {
@@ -53,6 +48,7 @@ public class Main extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new PlayerListener(),this);
         Bukkit.getPluginManager().registerEvents(new PlayerDeathEvent(), this);
         Bukkit.getPluginManager().registerEvents(new ShopEvent(), this);
+        Bukkit.getPluginManager().registerEvents(new ItemsListener(), this);
 
 
         WorldCreator wc = new WorldCreator("world");

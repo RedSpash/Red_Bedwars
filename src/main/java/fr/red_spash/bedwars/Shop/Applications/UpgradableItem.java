@@ -27,6 +27,10 @@ public class UpgradableItem extends ItemShop {
         return this;
     }
 
+    public void resetPlayerData(){
+        this.playerLevel.clear();
+    }
+
     public UpgradableItem getMain(){
         UpgradableItem upgradableItem = this;
         while (upgradableItem.beforeItemShop != null){
@@ -63,19 +67,23 @@ public class UpgradableItem extends ItemShop {
     }
 
     public void addOneLevel(UUID uuid){
-        if(!playerLevel.containsKey(uuid)){
-            playerLevel.put(uuid,1);
-        }else{
-            playerLevel.put(uuid,playerLevel.get(uuid)+1);
+        if(beforeItemShop == null){
+            if(!playerLevel.containsKey(uuid)){
+                playerLevel.put(uuid,1);
+            }else{
+                playerLevel.put(uuid,playerLevel.get(uuid)+1);
+            }
         }
     }
 
     public void addRemoveOneLevel(UUID uuid){
-        if(!playerLevel.containsKey(uuid)){
-            playerLevel.put(uuid,0);
-        }else{
-            if(playerLevel.get(uuid) != 0){
-                playerLevel.put(uuid,playerLevel.get(uuid)-1);
+        if(beforeItemShop == null){
+            if(!playerLevel.containsKey(uuid)){
+                playerLevel.put(uuid,0);
+            }else{
+                if(playerLevel.get(uuid) != 0){
+                    playerLevel.put(uuid,playerLevel.get(uuid)-1);
+                }
             }
         }
     }

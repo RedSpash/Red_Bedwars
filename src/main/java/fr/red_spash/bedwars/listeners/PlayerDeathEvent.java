@@ -4,17 +4,22 @@ import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
 import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.Models.Base;
 import fr.red_spash.bedwars.Models.DamageCaused;
+import fr.red_spash.bedwars.Models.PlayerData;
 import fr.red_spash.bedwars.utils.GameState;
 import fr.red_spash.bedwars.utils.Utils;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.libs.jline.internal.Nullable;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.Bed;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
@@ -37,18 +42,20 @@ public class PlayerDeathEvent implements Listener {
                     return;
                 }
             }
-            if(e.getFrom().getY()<=0){
-                if(p.getWorld().getName().equalsIgnoreCase("bedwars")){
-                    DamageCaused damageCaused = new DamageCaused(null,-1);
-                    if(BedWarsGame.lastDamageCaused.containsKey(p.getUniqueId())){
-                        damageCaused = BedWarsGame.lastDamageCaused.get(p.getUniqueId());
-                    }
-                    if(damageCaused.isValid()){
-                        playerDead(p,"{DEAD} vient d'être poussé dans le vide par {DAMAGER}", Bukkit.getPlayer(damageCaused.getDamager()));
-                    }else{
-                        playerDead(p,"{DEAD} est tombé dans le vide !",null);
-                    }
+            if(BedWarsGame.gameStat == GameState.Started){
+                if(e.getFrom().getY()<=0){
+                    if(p.getWorld().getName().equalsIgnoreCase("bedwars")){
+                        DamageCaused damageCaused = new DamageCaused();
+                        if(BedWarsGame.lastDamageCaused.containsKey(p.getUniqueId())){
+                            damageCaused = BedWarsGame.lastDamageCaused.get(p.getUniqueId());
+                        }
+                        if(damageCaused.isValid()){
+                            playerDead(p,"{DEAD} vient d'être poussé dans le vide par {DAMAGER}", Bukkit.getPlayer(damageCaused.getDamager()));
+                        }else{
+                            playerDead(p,"{DEAD} est tombé dans le vide !",null);
+                        }
 
+                    }
                 }
             }
         }
@@ -74,7 +81,7 @@ public class PlayerDeathEvent implements Listener {
             }
             if(p.getHealth() <= e.getFinalDamage()){
                 e.setCancelled(true);
-                DamageCaused damageCaused = new DamageCaused(null,-1);
+                DamageCaused damageCaused = new DamageCaused();
                 if(BedWarsGame.lastDamageCaused.containsKey(p.getUniqueId())){
                     damageCaused = BedWarsGame.lastDamageCaused.get(p.getUniqueId());
                 }
@@ -101,21 +108,25 @@ public class PlayerDeathEvent implements Listener {
                             message = "{DEAD} a brulé à mort !";
                         }
                         break;
-                    case ENTITY_ATTACK:
+                    case ENTITY_EXPLOSION:
+                    case BLOCK_EXPLOSION:
+                        if(damageCaused.isValid()){
+                            if(damageCaused.getEntity() == EntityType.FIREBALL){
+                                message = "{DEAD} est mort d'une fireball de {DAMAGER} !";
+                            }else{
+                                message = "{DEAD} est mort d'une explosion causée par {DAMAGER} !";
+                            }
+
+                        }else{
+                            message = "{DEAD} est mort d'une explosion !";
+                        }
+                        break;
+                    default:
                         if(damageCaused.isValid()){
                             message = "{DAMAGER} vient de tuer {DEAD} !";
                         }else{
                             message = "{DEAD} est mort !";
                         }
-                        break;
-                    case ENTITY_EXPLOSION:
-                    case BLOCK_EXPLOSION:
-                        if(damageCaused.isValid()){
-                            message = "{DEAD} est mort d'une explosion causée par {DAMAGER} !";
-                        }else{
-                            message = "{DEAD} est mort d'une explosion !";
-                        }
-                        break;
                 }
 
                 if(damageCaused.isValid()){
@@ -124,6 +135,8 @@ public class PlayerDeathEvent implements Listener {
                     playerDead(p,message,null);
                 }
             }
+        } else if (e.getEntity() instanceof Villager) {
+            e.setCancelled(true);
         }
     }
 
@@ -133,7 +146,14 @@ public class PlayerDeathEvent implements Listener {
             if(e.getDamager() instanceof Player){
                 Player p = (Player) e.getEntity();
                 Player damager = (Player) e.getDamager();
-                BedWarsGame.lastDamageCaused.put(p.getUniqueId(),new DamageCaused(damager.getUniqueId()));
+                BedWarsGame.lastDamageCaused.put(p.getUniqueId(),new DamageCaused(p.getUniqueId(),damager.getUniqueId()));
+            }if(e.getDamager() instanceof Fireball){
+                Player p = (Player) e.getEntity();
+                Fireball damager = (Fireball) e.getDamager();
+                if(damager.getShooter() instanceof Player){
+                    BedWarsGame.lastDamageCaused.put(p.getUniqueId(),new DamageCaused(p.getUniqueId(),((Player) damager.getShooter()).getUniqueId()).setEntity(EntityType.FIREBALL));
+                }
+
             }
         }
     }
@@ -150,11 +170,19 @@ public class PlayerDeathEvent implements Listener {
         p.getLocation().getWorld().playSound(p.getLocation(), Sound.HURT_FLESH,1,1);
         deathMessage = deathMessage.replace("{DEAD}", Utils.getChatColorOf(base.getColor())+p.getName()+"§e");
         if(Killer != null){
-            Base basedamager = BedWarsGame.playersDatas.get(Killer.getUniqueId()).getBase();
-            deathMessage = deathMessage.replace("{DAMAGER}",Utils.getChatColorOf(basedamager.getColor())+Killer.getName()+"§e");
-            Player damager = Bukkit.getPlayer(Killer.getUniqueId());
-            if(damager.isOnline()){
-                damager.playSound(damager.getLocation(), Sound.ORB_PICKUP,1,2);
+            if(!p.getName().equalsIgnoreCase(Killer.getName())){
+                PlayerData killerData = BedWarsGame.playersDatas.get(Killer.getUniqueId());
+                Base basedamager = killerData.getBase();
+                if(!finalKill.equalsIgnoreCase("")){
+                    killerData.addFinalKill();
+                }else{
+                    killerData.addKill();
+                }
+                deathMessage = deathMessage.replace("{DAMAGER}",Utils.getChatColorOf(basedamager.getColor())+Killer.getName()+"§e");
+                Player damager = Bukkit.getPlayer(Killer.getUniqueId());
+                if(damager.isOnline()){
+                    damager.playSound(damager.getLocation(), Sound.ORB_PICKUP,1,2);
+                }
             }
 
         }
@@ -184,10 +212,12 @@ public class PlayerDeathEvent implements Listener {
         BedWarsGame.lastDamageCaused.remove(p.getUniqueId());
         if(!base.asBed()){
             BedWarsGame.playersDatas.get(p.getUniqueId()).setDead(true);
-            BedWarsGame.addSpectator(p.getUniqueId());
             Utils.sendTitle(p,"§c§lVous n'avez plus de lit !","§cVous ne pouvez plus réapparaitre",0,20*5,20);
-            p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,5*20,10,false,false));
-            p.playSound(p.getLocation(), Sound.WITHER_SPAWN,1,0);
+            if(!BedWarsGame.checkIsEnd()){
+                p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS,5*20,10,false,false));
+                p.playSound(p.getLocation(), Sound.WITHER_SPAWN,1,0);
+                BedWarsGame.addSpectator(p.getUniqueId());
+            }
             return;
         }
         p.teleport(BedWarsGame.spawn);

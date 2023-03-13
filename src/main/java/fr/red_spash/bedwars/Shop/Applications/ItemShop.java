@@ -20,6 +20,7 @@ public abstract class ItemShop {
     private boolean onlyOne = false;
     private int maxItemInInventory = -1;
     private boolean giveable = true;
+    private boolean enable = true;
 
 
     public ItemShop(ItemStack itemStack,String name, String desription, Prix prix){
@@ -34,7 +35,13 @@ public abstract class ItemShop {
         this.informations = informations;
     }
 
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
 
+    public boolean isEnable() {
+        return enable;
+    }
 
     public ItemShop setGiveable(boolean giveable) {
         this.giveable = giveable;
@@ -121,7 +128,8 @@ public abstract class ItemShop {
         }
         itemMeta.setLore(descriptionList);
         itemStack.setItemMeta(itemMeta);
-        return itemStack;
+        itemStack.setAmount(this.itemStack.getAmount());
+        return itemStack.clone();
     }
 
     private String prixColor(Material itemTypeNeed) {

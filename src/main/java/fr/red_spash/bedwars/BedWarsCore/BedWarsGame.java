@@ -3,6 +3,10 @@ package fr.red_spash.bedwars.BedWarsCore;
 import fr.red_spash.bedwars.Items.Items;
 import fr.red_spash.bedwars.Main;
 import fr.red_spash.bedwars.Models.*;
+import fr.red_spash.bedwars.Shop.Applications.ItemShop;
+import fr.red_spash.bedwars.Shop.Applications.UpgradableItem;
+import fr.red_spash.bedwars.Shop.ItemCategorie;
+import fr.red_spash.bedwars.Shop.Shop;
 import fr.red_spash.bedwars.utils.GameState;
 import fr.red_spash.bedwars.utils.Utils;
 import org.bukkit.*;
@@ -67,72 +71,6 @@ public class BedWarsGame implements Listener {
     public static ArrayList<Location> blockBreakable = new ArrayList<>();
     public static ArrayList<Location> locationNotPlaceable = new ArrayList<>();
 
-    @EventHandler
-    public void PlayerBreakBlock(BlockBreakEvent e){
-        Player p = e.getPlayer();
-        if(gameStat != GameState.Started && !p.isOp()){
-            e.setCancelled(true);
-            return;
-        }
-        if(BedWarsGame.inRespawn.containsKey(p.getUniqueId()) || BedWarsGame.playerSpectator.contains(p.getUniqueId())){
-            if(p.getGameMode() != GameMode.CREATIVE){
-                e.setCancelled(true);
-                return;
-            }
-        }
-        Block block = e.getBlock();
-        Base base = null;
-
-        if(block.getType() == Material.BED_BLOCK){
-            for(Base b : bases){
-                if(b.isMyBed(block)){
-                    base = b;
-                }
-            }
-            if(base != null){
-                if(base.getPlayersUUID().contains(p.getUniqueId())){
-                    e.setCancelled(true);
-                    p.sendMessage("§cTu ne peux pas casser ton lit !");
-                    return;
-                }
-                block.getWorld().strikeLightning(block.getLocation().add(0.5,0,0.5));
-                PlayerData playerData = playersDatas.get(p.getUniqueId());
-                Bukkit.broadcastMessage("§c\n§c§lDESTRUCTION DE LIT > §7Le "+Utils.getChatColorOf(base.getColor())+"lit de l'équipe "+base.getTeamName()+" §7vient d'être détruit par "+playerData.getNameWithColor()+"!\n§f§o  §f  \n§f");
-                base.setAsBed(false);
-                for(Player pl : Bukkit.getOnlinePlayers()){
-                    pl.playSound(pl.getLocation(), Sound.ENDERDRAGON_GROWL,1,1);
-                }
-                checkIsEnd();
-                return;
-            }
-
-        }
-        if(!blockBreakable.contains(e.getBlock().getLocation())){
-            if(!p.isOp() ||p.getGameMode() == GameMode.SURVIVAL){
-                e.setCancelled(true);
-                p.sendMessage("§cImpossible de casser le block !");
-            }
-        }
-    }
-
-    @EventHandler
-    public void BlockPlace(BlockPlaceEvent e){
-        Block block = e.getBlock();
-        Player p = e.getPlayer();
-        if(gameStat != GameState.Started && !p.isOp()){
-            e.setCancelled(true);
-            return;
-        }
-        if(locationNotPlaceable.contains(block.getLocation())){
-            e.setCancelled(true);
-            p.sendMessage("§cImpossible de placer une block ici !");
-            return;
-        }
-        if(!p.isOp() || p.getGameMode() == GameMode.SURVIVAL){
-            blockBreakable.add(block.getLocation());
-        }
-    }
-
 
     public static void startGame() {
         if (Bukkit.getWorld("bedwars") != null) {
@@ -158,7 +96,7 @@ public class BedWarsGame implements Listener {
 
         if(world != null){
             Bukkit.broadcastMessage("§aScan en cours du monde...");
-            world.setGameRuleValue("mobGriefing","false");
+            world.setGameRuleValue("mobGriefing","true");
             world.setGameRuleValue("doDaylightCycle","false");
             world.setGameRuleValue("doFireTick","false");
             world.setGameRuleValue("showDeathMessages","false");
@@ -292,7 +230,7 @@ public class BedWarsGame implements Listener {
     private static void startGameCount() {
         if(decompte == null){
             decompte = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), new Runnable() {
-                int i = 20;
+                int i = 3;
                 @Override
                 public void run() {
                     List<Player> allplayers = (List<Player>) Bukkit.getOnlinePlayers();
@@ -410,7 +348,10 @@ public class BedWarsGame implements Listener {
         checkIsEnd();
     }
 
-    public static void checkIsEnd(){
+    public static boolean checkIsEnd(){
+        if(gameStat != GameState.Started){
+            return false;
+        }
         int nbr = 0;
         Base victoryBase = null;
         for(Base base : bases){
@@ -422,7 +363,7 @@ public class BedWarsGame implements Listener {
                 }
             }
             if(nbr >= 2){
-                return;
+                return false;
             }
         }
 
@@ -431,14 +372,12 @@ public class BedWarsGame implements Listener {
                if(victoryBase.getPlayersUUID().contains(p.getUniqueId())){
                    Utils.sendTitle(p,"§6§lVICTOIRE","§6Vous avez gagné la partie !",0,20*15,0);
                } else if (playersDatas.get(p.getUniqueId()).getBase() != null) {
-                   Utils.sendTitle(p,"§c§lDEFAITE","§a§lLes "+victoryBase.getTeamName()+"§a§l gagnent la partie !",0,20*15,0);
+                   Utils.sendTitle(p,"§c§lDEFAITE","§a§lL'équipe "+victoryBase.getTeamName()+"§a§l gagnent la partie !",0,20*15,20*2);
                }else{
-                   Utils.sendTitle(p,"§c§lGAME OVER","§a§lLes "+victoryBase.getTeamName()+"§a§l gagnent la partie !",0,20*15,0);
+                   Utils.sendTitle(p,"§c§lGAME OVER","§a§lL'équipe "+victoryBase.getTeamName()+"§a§l gagnent la partie !",0,20*15,20*2);
                }
-               Bukkit.broadcastMessage("§6\n§a§lLa partie est remportée par l'équipe "+victoryBase.getTeamName()+" §a§l!\n§f§o §f\n§f");
            }else{
-               Utils.sendTitle(p,"§c§lGAME OVER","§6§légalité, personne ne gagne.",0,20*10,0);
-               Bukkit.broadcastMessage("§6\n§a§lLa partie se termine sur une égalité !\n§f§o §f\n§f");
+               Utils.sendTitle(p,"§c§lGAME OVER","§6§légalité, personne ne gagne.",0,20*10,20*2);
            }
            Utils.clearArmor(p);
             p.getInventory().clear();
@@ -451,6 +390,11 @@ public class BedWarsGame implements Listener {
             p.setAllowFlight(true);
             p.setFlying(true);
         }
+        if(victoryBase != null){
+            Bukkit.broadcastMessage("§6\n§a§lLa partie est remportée par l'équipe "+victoryBase.getTeamName()+" §a§l!\n§f§o §f\n§f");
+        }else{
+            Bukkit.broadcastMessage("§6\n§a§lLa partie se termine sur une égalité !\n§f§o §f\n§f");
+        }
         gameStat = GameState.Finish;
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), new Runnable() {
             @Override
@@ -458,6 +402,7 @@ public class BedWarsGame implements Listener {
                 resetGame();
             }
         },20*20);
+        return true;
     }
 
     private static void resetGame() {
@@ -473,6 +418,14 @@ public class BedWarsGame implements Listener {
         lastDamageCaused.clear();
         for(Player p : Bukkit.getOnlinePlayers()){
             playersDatas.put(p.getUniqueId(),new PlayerData(p.getUniqueId(),null));
+            for(Player pl : Bukkit.getOnlinePlayers()){
+                p.showPlayer(pl);
+            }
+            for(PotionEffect potionEffect : p.getActivePotionEffects()){
+                p.removePotionEffect(potionEffect.getType());
+            }
+            p.setFlying(false);
+            p.setAllowFlight(false);
         }
         itemSpawned.clear();
         for(ItemGenerator itemGenerator : ItemGenerators){
@@ -481,6 +434,17 @@ public class BedWarsGame implements Listener {
         for(Forge forge : Forges){
             forge.delete();
         }
+
+        for(ItemCategorie itemCategorie : Shop.itemShop.keySet()){
+            for(ItemShop itemShop : Shop.itemShop.get(itemCategorie)){
+                if(itemShop instanceof UpgradableItem){
+                    UpgradableItem upgradableItem = (UpgradableItem) itemShop;
+                    upgradableItem.resetPlayerData();
+                }
+            }
+        }
+
+        playerSpectator.clear();
         ItemGenerators.clear();
         spawn = null;
         blockBreakable.clear();
@@ -528,11 +492,23 @@ public class BedWarsGame implements Listener {
             if(blockBreakable.contains(new Location(block.getWorld(),block.getX(),block.getY(),block.getZ()))){
                 if(Utils.random_number(0,2) == 0){
                     block.breakNaturally(new ItemStack(Material.DIAMOND_PICKAXE));
-                    blockBreakable.remove(new Location(block.getWorld(),block.getX(),block.getY(),block.getZ()));
                 }
+                blockBreakable.remove(new Location(block.getWorld(),block.getX(),block.getY(),block.getZ()));
+                block.setType(Material.AIR);
             }
         }
-
     }
-
+    @EventHandler
+    public void blockexplode(BlockExplodeEvent e){
+        e.setCancelled(true);
+        for(Block block : e.blockList()){
+            if(blockBreakable.contains(new Location(block.getWorld(),block.getX(),block.getY(),block.getZ()))){
+                if(Utils.random_number(0,2) == 0){
+                    block.breakNaturally(new ItemStack(Material.DIAMOND_PICKAXE));
+                }
+                blockBreakable.remove(new Location(block.getWorld(),block.getX(),block.getY(),block.getZ()));
+                block.setType(Material.AIR);
+            }
+        }
+    }
 }

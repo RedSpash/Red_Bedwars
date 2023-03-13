@@ -4,10 +4,7 @@ import fr.red_spash.bedwars.BedWarsCore.BedWarsGame;
 import fr.red_spash.bedwars.utils.Utils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Villager;
+import org.bukkit.entity.*;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -15,13 +12,14 @@ import java.util.UUID;
 
 public class Base {
 
-    private Villager itemsShop;
-    private Villager upgrades;
+    private Villager itemsShopVillager;
+    private Villager upgradesVillager;
     private DyeColor teamColor;
     private ArrayList<UUID> playersUUID = new ArrayList<>();
     private Location bedLocation;
     private Location spawnLocation;
     private boolean asBed = true;
+    private BaseUpgrade upgrades;
     private Forge forge;
     private Location itemGeneratorLocation;
 
@@ -35,6 +33,7 @@ public class Base {
         //speed true: 0.666666
         this.forge = new Forge(itemGeneratorLocation,1.0, BedWarsGame.MAX_ITEM_FORGE);
         BedWarsGame.bases.add(this);
+        this.upgrades = new BaseUpgrade();
     }
 
     private void focusBedLocation(){
@@ -68,7 +67,7 @@ public class Base {
         if(!asBed){
             for(UUID uuid : this.playersUUID){
                 Player p = Bukkit.getPlayer(uuid);
-                Utils.sendTitle(p,"§4§lLit détruit !","§cIl est désormais impossible de réapparaitre !",0,20*5,20);
+                Utils.sendTitle(p,"§c⚠ §c§lLit détruit ! §c⚠","§aVous ne pouvez plus réapparaitre !",0,20*5,20);
                 p.playSound(p.getLocation(), Sound.WITHER_SPAWN,1,1);
             }
         }
@@ -84,18 +83,22 @@ public class Base {
 
     public void setUpgradesVillager(Villager villager) {
         villager.setProfession(Villager.Profession.FARMER);
-        this.upgrades = villager;
+        this.upgradesVillager = villager;
         Location location = villager.getLocation();
-        location.setYaw(90);
-        location.setPitch(90);
+        Vector dirBetweenLocations = villager.getLocation().toVector().subtract(this.spawnLocation.clone().toVector());
+        location.setDirection(dirBetweenLocations);
         location.add(0.5,0,0.5);
-        Utils.setRotation(villager,90,0);
+        villager.teleport(new Location(villager.getWorld(),0,100,0,location.getYaw(),location.getPitch()));
+        villager.teleport(location);
+        Utils.setAI(villager,false);
+        Utils.setSilent(villager,true);
+        villager.teleport(location);
         BedWarsGame.protectZone(villager.getLocation(),2);
     }
 
     public void setItemsShopVillager(Villager villager) {
         villager.setProfession(Villager.Profession.FARMER);
-        this.itemsShop = villager;
+        this.itemsShopVillager = villager;
         Location location = villager.getLocation();
         villager.teleport(new Location(villager.getWorld(),0,100,0));
         Vector dirBetweenLocations = villager.getLocation().toVector().subtract(this.spawnLocation.clone().toVector()).multiply(-1);
@@ -104,6 +107,7 @@ public class Base {
         villager.teleport(location);
         Utils.setAI(villager,false);
         Utils.setSilent(villager,true);
+        villager.teleport(location);
         BedWarsGame.protectZone(villager.getLocation(),2);
     }
 
